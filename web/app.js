@@ -526,8 +526,16 @@ function openOffer(id,noHash){
 function enrich(o){
   detailFile(o.file).then(function(D){
     if($('dEyebrow').textContent.indexOf('#'+o.id+' ')<0) return;
-    o.url=D.u[o.okey]; var go=$('dGo'); if(go&&o.url){go.href=o.url;go.removeAttribute('aria-disabled');go.style.opacity='';go.style.pointerEvents='';}
-    var H=D.h[o.hotel.gid]; if(!H) return;
+    var H=D.h[o.hotel.gid], go=$('dGo');
+    o.url=D.u[o.okey]||(H&&H.hu&&H.hu[o.partner])||null;
+    if(go&&o.url){go.href=o.url;go.removeAttribute('aria-disabled');go.style.opacity='';go.style.pointerEvents='';}
+    if(!D.u[o.okey]){ // mezitím proběhla aktualizace a termín zmizel
+      var note=document.createElement('div');note.className='demo-note';
+      note.innerHTML=H?'Ceny se mezitím aktualizovaly a tenhle termín už partner nemá. Tlačítko tě pošle na hotel, kde uvidíš aktuální termíny. <a href="#" onclick="location.reload();return false">Obnovit nabídky</a>':'Ceny se mezitím aktualizovaly a tahle nabídka už není dostupná. <a href="#" onclick="location.reload();return false">Obnovit nabídky</a>';
+      $('dBody').insertBefore(note,$('dBody').querySelector('.cta-row'));
+      if(!H&&go){go.textContent='Obnovit nabídky';go.href=location.pathname;go.removeAttribute('target');go.removeAttribute('aria-disabled');go.style.opacity='';go.style.pointerEvents='';}
+    }
+    if(!H) return;
     o.hotelMin=Math.min.apply(null,H.t.map(function(t){return t[5]}));
     if(H.p){$('dPerex').textContent=H.p;$('dAbout').hidden=false;}
     var mineT=H.t.filter(function(t){return t[0]===o.partner}), other=o.partner==='d'?'i':'d', alt=H.t.filter(function(t){return t[0]===other}).sort(function(a,b){return a[5]-b[5]})[0];
@@ -562,6 +570,7 @@ window.addEventListener('hashchange',function(){var m=location.hash.match(/^#nab
 var MAIN=DEMO?bestOf(ITEMS.filter(function(o){return o.tags.indexOf('greece')<0||o.tags.indexOf('july')>=0})):bestOf(ITEMS);
 if(PAGE==='home') home(); else if(PAGE==='greece') greece();
 welcomeApp(); autoInstall();
+if(!DEMO) document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&DATA&&Date.now()>Date.parse(DATA.next)+10*60e3&&!$('drawer').classList.contains('on'))location.reload();});
 document.addEventListener('click',function(e){if(e.target.closest('[data-install]')){e.preventDefault();showInstall('manual');}});
 var mh=location.hash.match(/^#nabidka-(\d+)$/);if(mh)openOffer(mh[1],true);
 var hh=location.hash.match(/^#hotel-(.+)$/);if(hh){var hg=decodeURIComponent(hh[1]),cand=ITEMS.filter(function(o){return o.hotel&&o.hotel.gid===hg}).sort(function(a,b){return a.ppp-b.ppp})[0];if(cand)openOffer(cand.id);}
