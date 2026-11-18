@@ -280,6 +280,8 @@ function bestOf(list){var m={};list.forEach(function(o){var k=o.type==='package'
 function withTag(t){return ITEMS.filter(function(o){return o.tags.indexOf(t)>=0});}
 var lastSlot=(function(){var t=new Date(),l=new Date(t);l.setHours(Math.floor(t.getHours()/3)*3,0,0,0);return l;})();
 if(DEMO) ITEMS.forEach(function(o){o.checkedMin=Math.max(1,Math.round((Date.now()-lastSlot)/6e4)-Math.floor(R()*30));});
+function diverse(list,n,per){var c={},out=[];per=per||1;for(var i=0;i<list.length&&out.length<n;i++){var k=list[i].d.ctry;c[k]=(c[k]||0)+1;if(c[k]<=per)out.push(list[i]);}return out;}
+function mix(list){var g={},keys=[];list.forEach(function(o){var k=o.d.ctry;if(!g[k]){g[k]=[];keys.push(k);}g[k].push(o);});var out=[];for(var r=0;out.length<list.length;r++){keys.forEach(function(k){if(g[k][r])out.push(g[k][r]);});}return out;}
 function isTreasure(o){return o.idx>=88||o.dropPct>=.12;}
 function why(o){
   if(o.anom) return o.anom.txt;
@@ -349,7 +351,7 @@ function oldPrice(o){return Math.max.apply(null,o.hist.slice(0,13));}
 
 // ------------------------------------------------------------------ řádek a dlaždice
 function row(o){
-  var pct=o.dropPct>=.05?'<span class="pct">−'+Math.round(o.dropPct*100)+' %</span>':'';
+  var pct=o.dropPct>=.05?'<span class="pct">−'+Math.round(o.dropPct*100)+' %</span>':o.disc>=5?'<span class="pct">−'+o.disc+' %</span>':'';
   var under=o.dropPct>=.05?'<div class="old">'+kc(oldPrice(o))+'</div>':'<div class="pp">'+unit(o)+'</div>';
   var where=o.type==='hotel'?'<span><svg class="i"><use href="#i-pin"/></svg>'+esc(o.d.city)+'</span>':'<span><svg class="i"><use href="#i-plane"/></svg>'+(AIR[o.air]||'')+'</span>';
   return '<article class="row" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(title(o)+', '+kc(o.ppp))+'">'+
@@ -454,7 +456,14 @@ function home(){
   // statistiky
   var newC=MAIN.filter(function(o){return o.isNew||o.age<24}).length, dropC=MAIN.filter(function(o){return o.dropPct>=.06}).length;
   function anim(el,to){var t0=performance.now();(function st(t){var k=Math.min(1,((t||t0)-t0)/900);el.textContent=Math.round(to*(1-Math.pow(1-k,3))).toLocaleString('cs-CZ');if(k<1)requestAnimationFrame(st);})(t0);}
-  anim($('sNew'),newC); anim($('sDrop'),dropC); $('bellN').textContent=newC; $('badge').textContent=newC;
+  var treasC=MAIN.filter(isTreasure).length, discC=MAIN.filter(function(o){return o.disc>=10}).length;
+  var s1=$('sNew').closest('.stat'), s2=$('sDrop').closest('.stat');
+  if(!DEMO){
+    s1.querySelector('.k').textContent='Pokladů teď'; s1.querySelector('.v').innerHTML='<span id="sNew">0</span>'; s1.setAttribute('data-act','poklady'); s1.style.cursor='pointer';
+    if(!dropC){s2.querySelector('.k').textContent='Ve slevě u cestovek';}
+    s2.setAttribute('data-act','sleva'); s2.style.cursor='pointer';
+  }
+  anim($('sNew'),DEMO?newC:treasC); anim($('sDrop'),DEMO||dropC?dropC:discC); $('bellN').textContent=newC; $('badge').textContent=newC;
 
   // výpis s filtry a záložkami
   var TABS=[['all','Všechny nabídky'],['poklady','Poklady'],['lm','Last minute'],['nove','Nové'],['letenky','Letenky'],['sleva','Zlevněné'],['fm','First minute'],['lux','Pro náročné']];
@@ -462,7 +471,7 @@ function home(){
   var shown=10;
   var months={}; MAIN.forEach(function(o){months[o.dep.getFullYear()*12+o.dep.getMonth()]=1;});
   $('fMonth').innerHTML='<option value="all">Termín</option>'+Object.keys(months).sort(function(a,b){return a-b}).map(function(k){return '<option value="'+k+'">'+MONTHS_FULL[k%12]+' '+Math.floor(k/12)+'</option>';}).join('');
-  function inTab(o,t){switch(t){case 'poklady':return isTreasure(o);case 'lm':return o.type!=='flight'&&o.dep-TODAY<21*864e5;case 'nove':return o.isNew||o.age<24;case 'letenky':return o.type==='flight';case 'sleva':return o.dropPct>=.06;case 'fm':return o.dep>=D0(2027,5,1);case 'lux':return o.tags.indexOf('lux')>=0;}return o.tags.indexOf('lux')<0||S.q||S.dest;}
+  function inTab(o,t){switch(t){case 'poklady':return isTreasure(o);case 'lm':return o.type!=='flight'&&o.dep-TODAY<21*864e5;case 'nove':return o.isNew||o.age<24;case 'letenky':return o.type==='flight';case 'sleva':return o.dropPct>=.06||o.disc>=10;case 'fm':return o.dep>=D0(2027,5,1);case 'lux':return o.tags.indexOf('lux')>=0;}return o.tags.indexOf('lux')<0||S.q||S.dest;}
   function base(){
     var q=norm(S.q); var src=S.tag?withTag(S.tag):MAIN;
     return src.filter(function(o){
@@ -485,6 +494,7 @@ function home(){
     var b=base();
     $('tabs').innerHTML=TABS.map(function(t){var n=b.filter(function(o){return inTab(o,t[0])}).length;if(!n&&t[0]!=='all'&&t[0]!==S.tab)return '';return '<button type="button" role="tab" data-tab="'+t[0]+'" aria-selected="'+(S.tab===t[0]&&!S.savedOnly)+'">'+t[1]+' <span>'+n+'</span></button>';}).join('');
     var l=b.filter(function(o){return S.savedOnly||inTab(o,S.tab)}).sort(function(a,c){if(S.sort==='day')return a.ppn-c.ppn;if(S.sort==='price')return a.ppp-c.ppp;if(S.sort==='drop')return c.dropPct-a.dropPct;if(S.sort==='new')return a.age-c.age;return c.idx-a.idx;});
+    if(S.sort==='idx'&&!S.q&&!S.dest&&!S.savedOnly) l=mix(l);
     var chip=S.savedOnly?'Uložené nabídky':S.tag?S.tagName:S.dest?'Jen '+DEST[S.dest].city:'';
     $('list').innerHTML=(chip?'<p class="mono" style="font-size:12px;color:var(--mute);margin:12px 0 0">'+esc(chip)+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zpět na celý výpis</button></p>':'')+
       (l.length?l.slice(0,shown).map(row).join(''):'<div class="empty">'+(S.savedOnly?'Zatím nic uloženého. Klikni na ♥ u nabídky.':'Na tenhle výběr teď nic nemáme. Zkus jiný termín nebo vyšší rozpočet.')+'</div>');
@@ -495,6 +505,14 @@ function home(){
   $('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(!b)return;S.tab=b.getAttribute('data-tab');S.savedOnly=false;shown=10;render();});
   $('list').addEventListener('click',function(e){if(e.target.closest('[data-act="clear"]')){S.savedOnly=false;S.tag=null;S.dest=null;render();}});
   $('q').addEventListener('input',function(e){S.q=e.target.value;shown=10;render();});
+  function doSearch(){S.q=$('q').value;S.tab='all';S.savedOnly=false;S.tag=null;S.dest=null;shown=10;render();$('q').blur();toList();
+    var n=base().filter(function(o){return inTab(o,'all')}).length;toast(S.q?(n?'Nalezeno '+n+' nabídek':'Nic jsme nenašli, zkus jiné slovo'):'Celý výpis');}
+  $('q').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();doSearch();}});
+  $('q').addEventListener('search',doSearch);
+  var sb=$('q').closest('.sbox'); if(sb&&!document.getElementById('qGo')){var bt=document.createElement('button');bt.type='button';bt.id='qGo';bt.className='btn or';bt.textContent='Hledat';bt.style.cssText='padding:6px 14px;margin-left:6px;border-radius:999px;font-size:14px';bt.addEventListener('click',doSearch);sb.appendChild(bt);}
+  // našeptávač destinací
+  var dl=document.createElement('datalist');dl.id='qList';var seen={};MAIN.forEach(function(o){[o.d.ctry,o.d.city].forEach(function(x){if(x&&!seen[x]){seen[x]=1;dl.appendChild(new Option(x));}});});document.body.appendChild(dl);$('q').setAttribute('list','qList');
+  document.addEventListener('click',function(e){var a=e.target.closest('.stat[data-act]');if(!a)return;S.tab=a.getAttribute('data-act');S.savedOnly=false;S.tag=null;shown=10;render();toList();});
   [['fMonth','month',String],['fMax','max',Number],['fBoard','board',String],['fAir','air',String],['fSort','sort',String]].forEach(function(f){$(f[0]).addEventListener('change',function(e){S[f[1]]=f[2](e.target.value);shown=10;render();});});
   $('fPax').addEventListener('change',function(){toast('Ceny jsou za osobu; celkovou cenu uvidíš v detailu');});
   [['fBeach','beach'],['fRating','rating'],['fStars','stars']].forEach(function(f){$(f[0]).addEventListener('change',function(e){S[f[1]]=e.target.checked;shown=10;render();});});
@@ -509,7 +527,7 @@ function home(){
   var CATCH=MAIN.filter(function(o){return o.anom&&o.type==='package'&&o.dep-TODAY<75*864e5}).sort(function(a,b){return b.idx-a.idx})[0]||MAIN[0];
   $('catchIdx').textContent='Pomeranč index '+CATCH.idx; $('catch').setAttribute('data-open',CATCH.id);
   $('catch').innerHTML='<div style="height:150px;border-radius:12px;overflow:hidden">'+pic(CATCH,150)+'</div><div class="dest">'+esc(CATCH.d.city)+'</div><div class="sub">'+esc(CATCH.d.ctry)+' · '+esc(CATCH.hotel.name)+' '+'★'.repeat(CATCH.hotel.stars)+'</div><div class="meta"><span><svg class="i"><use href="#i-plane"/></svg>'+AIR[CATCH.air]+'</span><span><svg class="i"><use href="#i-cal"/></svg>'+dc(CATCH.dep)+'–'+dc(CATCH.ret)+'</span><span>'+nights(CATCH.n)+' · '+BOARD[CATCH.board]+'</span></div><div class="p">'+kc(CATCH.ppp)+' <span style="font-family:var(--body);font-size:13px;color:var(--mute);font-weight:600;letter-spacing:0">/ osoba</span></div><div class="why">„'+esc(why(CATCH))+'“</div>';
-  $('miniRows').innerHTML=MAIN.slice().sort(function(a,b){return b.idx-a.idx}).filter(function(o){return o.type!=='hotel'}).slice(0,8).map(function(o){return '<div class="mrow" data-open="'+o.id+'" tabindex="0"><span>'+pad(o.dep.getDate())+'.'+pad(o.dep.getMonth()+1)+'</span><span>'+o.air+'</span><span class="c">'+esc(o.d.city.toUpperCase())+(o.type==='flight'?' ✈':'')+'</span><b>'+Math.round(o.ppp).toLocaleString('cs-CZ')+'</b></div>';}).join('');
+  $('miniRows').innerHTML=diverse(MAIN.slice().sort(function(a,b){return b.idx-a.idx}).filter(function(o){return o.type!=='hotel'}),8,1).map(function(o){return '<div class="mrow" data-open="'+o.id+'" tabindex="0"><span>'+pad(o.dep.getDate())+'.'+pad(o.dep.getMonth()+1)+'</span><span>'+o.air+'</span><span class="c">'+esc(o.d.city.toUpperCase())+(o.type==='flight'?' ✈':'')+'</span><b>'+Math.round(o.ppp).toLocaleString('cs-CZ')+'</b></div>';}).join('');
   var kinds={drop:'Pokles ceny',air:'Jiné letiště',nights:'Víc nocí za míň',board:'Strava navíc skoro zdarma',cheap:'Letenka pod běžnou cenou'};
   var an=[];['drop','air','nights','board','cheap'].forEach(function(k){var x=ITEMS.filter(function(o){return o.anom&&o.anom.kind===k}).sort(function(a,b){return b.anom.s-a.anom.s})[0];if(x)an.push(x);});
   $('anoms').innerHTML=an.map(function(o){return '<button type="button" class="anom" data-open="'+o.id+'"><div class="t">'+kinds[o.anom.kind]+'</div><div class="q">'+esc(o.anom.txt)+'</div><div class="m">'+esc(title(o))+' · '+ds(o.dep)+' · '+kc(o.ppp)+'</div></button>';}).join('');
@@ -563,7 +581,7 @@ function home(){
   function cells(text,len){text=(text+' '.repeat(len)).slice(0,len);return '<span class="cells" aria-hidden="true">'+text.split('').map(function(c){return '<span class="fl" data-c="'+esc(c)+'">'+(reduce?esc(c):' ')+'</span>';}).join('')+'</span><span class="sr">'+esc(text.trim())+'</span>';}
   function flapAll(root){if(reduce)return;root.querySelectorAll('.fl').forEach(function(el,i){var t=el.getAttribute('data-c'),steps=4+Math.floor(Math.random()*8),n=0;setTimeout(function run(){if(n>=steps){el.textContent=t;el.classList.remove('flip');void el.offsetWidth;el.classList.add('flip');return;}el.textContent=CH[Math.floor(Math.random()*CH.length)];el.classList.remove('flip');void el.offsetWidth;el.classList.add('flip');n++;setTimeout(run,55);},(i%60)*12);});}
   function renderBoard(){
-    var l=MAIN.filter(function(o){return o.type!=='hotel'&&(boardAir==='ALL'||o.air===boardAir)}).sort(function(a,b){return b.idx-a.idx}).slice(0,12);
+    var l=diverse(MAIN.filter(function(o){return o.type!=='hotel'&&(boardAir==='ALL'||o.air===boardAir)}).sort(function(a,b){return b.idx-a.idx}),12,1);
     $('boardBody').innerHTML=l.map(function(o){var st=o.dropPct>=.06?'drop':o.isNew?'new':isTreasure(o)?'tip':'',tx=st==='drop'?'ZLEVNĚNO':st==='new'?'NOVÉ':st==='tip'?'POKLAD':'';
       return '<tr class="r st-'+st+'" data-open="'+o.id+'" tabindex="0"><td>'+cells(pad(o.dep.getDate())+'.'+pad(o.dep.getMonth()+1),5)+'</td><td>'+cells(o.air,3)+'</td><td>'+cells(o.d.city.toUpperCase(),11)+'</td><td>'+cells(String(o.n),2)+'</td><td>'+cells(o.type==='flight'?'LETENKA':o.type==='combo'?'LET+HOTEL':BOARD_SHORT[o.board],9)+'</td><td>'+cells(Math.round(o.ppp).toLocaleString('cs-CZ').replace(/\s/g,' '),7)+'</td><td>'+cells(String(o.idx),2)+'</td><td>'+cells(tx,8)+'</td></tr>';}).join('');
     flapAll($('boardBody'));
