@@ -287,6 +287,70 @@ function toggleWatch(o,btn){
     .then(function(){btn.disabled=false;});
 }
 
+// ------------------------------------------------------------------ přidání na plochu (nejdůležitější konverze)
+var INST={prompt:null};
+var IN_APP=/FBAN|FBAV|FB_IAB|FBIOS|Instagram|TikTok|musical_ly|Bytedance|Line\//i.test(navigator.userAgent);
+var IS_ANDROID=/Android/i.test(navigator.userAgent);
+var IS_MOBILE=IS_IOS||IS_ANDROID;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();INST.prompt=e;});
+window.addEventListener('appinstalled',function(){try{localStorage.setItem('cp_installed','1')}catch(e){}hideInstall();toast('Hotovo, Pomeranč je na ploše 🍊');});
+function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
+function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
+function installMode(){
+  if(IS_APP) return null;
+  if(IN_APP) return IS_ANDROID?'inapp-android':'inapp-ios';
+  if(INST.prompt) return 'prompt';
+  if(IS_IOS) return 'ios';
+  if(IS_ANDROID) return 'android';
+  return null;
+}
+var SHARE_ICO='<svg viewBox="0 0 24 24" width="22" height="22" style="vertical-align:-5px;color:#0a84ff" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
+var PLUS_ICO='<span style="display:inline-grid;place-items:center;width:20px;height:20px;border:1.8px solid currentColor;border-radius:5px;font-weight:800;line-height:1;vertical-align:-4px">+</span>';
+function hideInstall(){var el=document.getElementById('isheet');if(el)el.remove();}
+function showInstall(why){
+  var mode=installMode();
+  if(!mode){ if(why==='manual') toast(IS_APP?'Pomeranč už máš na ploše 🍊':'Na počítači stačí záložka. Na plochu si Pomeranč přidej v mobilu.'); return; }
+  hideInstall();
+  var el=document.createElement('div');el.id='isheet';el.className='isheet'+(mode==='ios'?' ios':'');el.setAttribute('role','dialog');el.setAttribute('aria-label','Přidat Pomeranč na plochu');
+  var head='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Přidej si Pomeranč na plochu</b><span>Každé ráno poklady dne, na ikoně uvidíš, kolik přibylo nových nabídek. Zdarma, bez registrace.</span></div></div>';
+  var body='';
+  if(mode==='prompt') body='<button type="button" class="btn or ibtn" data-i="prompt">📲 Přidat na plochu</button>';
+  else if(mode==='ios') body='<ol class="isteps"><li>Klepni dole na '+SHARE_ICO+' <b>Sdílet</b></li><li>Sjeď níž a vyber '+PLUS_ICO+' <b>Přidat na plochu</b></li><li>Vpravo nahoře klepni na <b>Přidat</b></li></ol><div class="iarrow" aria-hidden="true">↓</div>';
+  else if(mode==='android') body='<ol class="isteps"><li>Klepni vpravo nahoře na <b>⋮</b></li><li>Vyber <b>Přidat na plochu</b> nebo <b>Instalovat aplikaci</b></li></ol>';
+  else if(mode==='inapp-android') body='<p class="inote">Teď jsi v prohlížeči Facebooku nebo Instagramu, odsud na plochu přidat nejde.</p><button type="button" class="btn or ibtn" data-i="chrome">Otevřít v Chrome</button><p class="inote">Nebo klepni na <b>⋮</b> vpravo nahoře → <b>Otevřít v prohlížeči</b>.</p>';
+  else if(mode==='inapp-ios') body='<p class="inote">Teď jsi v prohlížeči Facebooku nebo Instagramu, odsud na plochu přidat nejde.</p><button type="button" class="btn or ibtn" data-i="safari">Otevřít v Safari</button><p class="inote">Nebo klepni na <b>•••</b> vpravo nahoře → <b>Otevřít v prohlížeči</b>.</p>';
+  el.innerHTML=head+body;
+  document.body.appendChild(el);
+  requestAnimationFrame(function(){el.classList.add('on');});
+  el.addEventListener('click',function(e){
+    if(e.target.closest('.ix')){lsSet('cp_inst_dismiss',Date.now());hideInstall();return;}
+    var b=e.target.closest('[data-i]');if(!b)return;var a=b.getAttribute('data-i');
+    if(a==='prompt'&&INST.prompt){INST.prompt.prompt();INST.prompt.userChoice.then(function(r){if(r.outcome==='accepted')hideInstall();INST.prompt=null;});}
+    if(a==='chrome') location.href='intent://'+location.host+location.pathname+location.search+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(location.href)+';end';
+    if(a==='safari') location.href='x-safari-'+location.href;
+  });
+}
+function autoInstall(){
+  if(IS_APP||!IS_MOBILE||lsGet('cp_installed')) return;
+  var d=+lsGet('cp_inst_dismiss')||0; if(Date.now()-d<20*3600e3) return;
+  var done=false;function go(){if(done)return;done=true;window.removeEventListener('scroll',onS);showInstall('auto');}
+  function onS(){if(window.scrollY>900)go();}
+  window.addEventListener('scroll',onS,{passive:true});
+  setTimeout(go,IN_APP?4000:9000);
+}
+// první spuštění z plochy: poděkovat a nabídnout ranní poklady
+function welcomeApp(){
+  if(!IS_APP||lsGet('cp_app_welcome')) return; lsSet('cp_app_welcome','1'); lsSet('cp_installed','1');
+  if(!pushSupported()||PUSH_ID) return;
+  var el=document.createElement('div');el.id='isheet';el.className='isheet';
+  el.innerHTML='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Vítej v Pomeranči 🍊</b><span>Chceš každé ráno vědět, co zlevnilo? Pošleme jedno upozornění denně kolem osmé.</span></div></div><button type="button" class="btn or ibtn" data-i="push">☀ Zapnout ranní poklady</button>';
+  document.body.appendChild(el);requestAnimationFrame(function(){el.classList.add('on');});
+  el.addEventListener('click',function(e){
+    if(e.target.closest('.ix')){hideInstall();return;}
+    if(e.target.closest('[data-i="push"]')){ensureSub({daily:true}).then(function(){hideInstall();toast('Hotovo, ranní poklady zapnuté ☀');}).catch(function(err){toast(pushError(err));});}
+  });
+}
+
 // ================================================================== start (po načtení dat)
 function start(){
 // ------------------------------------------------------------------ Pomeranč index a anomálie
@@ -360,7 +424,7 @@ function linkOf(o){
 var saved; try{saved=JSON.parse(localStorage.getItem('cp_saved')||'[]')}catch(e){saved=[]}
 function isSaved(id){return saved.indexOf(id)>=0;}
 function syncSaved(){var el=$('tbSaved');if(el)el.textContent=saved.length;}
-function toggleSave(id){var i=saved.indexOf(id);if(i>=0)saved.splice(i,1);else saved.push(id);try{localStorage.setItem('cp_saved',JSON.stringify(saved))}catch(e){}syncSaved();toast(i>=0?'Odebráno z uložených':'Uloženo ♥');document.querySelectorAll('[data-save="'+id+'"]').forEach(function(b){b.setAttribute('aria-pressed',isSaved(id))});}
+function toggleSave(id){var i=saved.indexOf(id);if(i>=0)saved.splice(i,1);else saved.push(id);try{localStorage.setItem('cp_saved',JSON.stringify(saved))}catch(e){}syncSaved();toast(i>=0?'Odebráno z uložených':'Uloženo ♥');if(i<0&&!IS_APP&&IS_MOBILE&&!lsGet('cp_installed'))setTimeout(function(){showInstall('save');},1200);document.querySelectorAll('[data-save="'+id+'"]').forEach(function(b){b.setAttribute('aria-pressed',isSaved(id))});}
 syncSaved();
 
 // ------------------------------------------------------------------ grafika
@@ -497,6 +561,8 @@ window.addEventListener('hashchange',function(){var m=location.hash.match(/^#nab
 // ------------------------------------------------------------------ stránky
 var MAIN=DEMO?bestOf(ITEMS.filter(function(o){return o.tags.indexOf('greece')<0||o.tags.indexOf('july')>=0})):bestOf(ITEMS);
 if(PAGE==='home') home(); else if(PAGE==='greece') greece();
+welcomeApp(); autoInstall();
+document.addEventListener('click',function(e){if(e.target.closest('[data-install]')){e.preventDefault();showInstall('manual');}});
 var mh=location.hash.match(/^#nabidka-(\d+)$/);if(mh)openOffer(mh[1],true);
 var hh=location.hash.match(/^#hotel-(.+)$/);if(hh){var hg=decodeURIComponent(hh[1]),cand=ITEMS.filter(function(o){return o.hotel&&o.hotel.gid===hg}).sort(function(a,b){return a.ppp-b.ppp})[0];if(cand)openOffer(cand.id);}
 

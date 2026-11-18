@@ -97,6 +97,8 @@ async function addInbox(env, id, msgs) {
 }
 
 async function notify(env, req) {
+  // Šetříme zápisy do KV (zdarma 1 000/den): ranní zprávu ukládáme jednou pro všechny (podle letiště),
+  // do odběratele se zapisuje jen při skutečném poklesu hlídané ceny.
   const now = pragueNow();
   const M = await asset(env, req, '/data/main.json');
   const st = (await env.PUSH.get('notify:state', 'json')) || {};
@@ -105,6 +107,11 @@ async function notify(env, req) {
   if (!st.run || st.run.gen !== gen || st.run.done) {
     if (st.run && st.run.gen === gen && st.run.done && !dailyDue) return { done: true, note: 'nic nového' };
     st.run = { gen, cursor: null, done: false, daily: dailyDue, sent: 0, gone: 0 };
+    if (dailyDue) {
+      const byAir = {};
+      for (const a of ['', 'PRG', 'BRQ', 'OSR', 'PED', 'VIE', 'KTW', 'BTS']) byAir[a] = dailySummary(M, a || null);
+      await env.PUSH.put('daily', JSON.stringify({ day: now.day, byAir }), { expirationTtl: 3 * 86400 });
+    }
   }
   const run = st.run;
   const list = await env.PUSH.list({ prefix: 'sub:', cursor: run.cursor || undefined, limit: 25 });
@@ -112,9 +119,9 @@ async function notify(env, req) {
   for (const k of list.keys) {
     const id = k.name.slice(4), s = await getSub(env, id);
     if (!s) continue;
+    let push = run.daily && s.daily !== false;
     const msgs = [];
-    if (run.daily && s.daily !== false && s.lastDaily !== now.day) { msgs.push(dailySummary(M, s.air)); s.lastDaily = now.day; }
-    if (s.watch && s.watch.length && s.lastGen !== gen) {
+    if (s.watch && s.watch.length) {
       for (const w of s.watch) {
         try {
           const D = files[w.file] || (files[w.file] = await asset(env, req, `/data/d/${w.file}.json`));
@@ -127,15 +134,13 @@ async function notify(env, req) {
           }
         } catch {}
       }
-      s.lastGen = gen;
+      if (msgs.length) { await addInbox(env, id, msgs); await putSub(env, id, s); push = true; }
     }
-    if (msgs.length) {
-      await addInbox(env, id, msgs);
+    if (push) {
       const code = await sendPush(env, s);
       if (code === 404 || code === 410) { await env.PUSH.delete('sub:' + id); await env.PUSH.delete('inbox:' + id); run.gone++; continue; }
       run.sent++;
     }
-    await putSub(env, id, s);
   }
   run.cursor = list.list_complete ? null : list.cursor;
   if (list.list_complete) { run.done = true; if (run.daily) st.dailyDay = now.day; }
@@ -185,6 +190,11 @@ export async function onRequest(ctx) {
         const id = url.searchParams.get('id');
         const msgs = (await env.PUSH.get('inbox:' + id, 'json')) || [];
         if (msgs.length) await env.PUSH.delete('inbox:' + id);
+        const s = await getSub(env, id), d = await env.PUSH.get('daily', 'json');
+        if (s && s.daily !== false && d && d.day === pragueNow().day) {
+          const m = d.byAir[s.air || ''] || d.byAir[''];
+          if (m) msgs.unshift(Object.assign({ once: 'ranni-' + d.day }, m));
+        }
         return J({ msgs });
       }
       case 'notify': return J(await notify(env, req));

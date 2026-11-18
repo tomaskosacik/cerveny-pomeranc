@@ -18,13 +18,16 @@ self.addEventListener('push', (e) => {
       msgs = (await r.json()).msgs || [];
     } catch (err) {}
     if (!msgs.length) msgs = [{ title: 'Červený pomeranč', body: 'Máme nové ceny zájezdů.', url: '/', tag: 'obecne' }];
-    let badge = 0;
+    let badge = 0, shown = 0;
+    const seen = await caches.open('cp-seen');
     for (const m of msgs) {
-      badge += m.badge || 0;
+      if (m.once) { const key = '/__seen/' + m.once; if (await seen.match(key)) continue; await seen.put(key, new Response('1')); }
+      badge += m.badge || 0; shown++;
       await self.registration.showNotification(m.title, {
         body: m.body, tag: m.tag, renotify: true, icon: '/icon-192.png', badge: '/icon-192.png', data: { url: m.url || '/' },
       });
     }
+    if (!shown) await self.registration.showNotification('Červený pomeranč', { body: 'Máme nové ceny zájezdů.', tag: 'obecne', icon: '/icon-192.png', data: { url: '/' } });
     if (badge && self.navigator && 'setAppBadge' in self.navigator) { try { await self.navigator.setAppBadge(badge); } catch (err) {} }
   })());
 });
