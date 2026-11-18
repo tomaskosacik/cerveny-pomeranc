@@ -29,6 +29,8 @@ jobs:
         working-directory: feeds
       - run: node convert.mjs
         working-directory: feeds
+        env:
+          TP_TOKEN: ${{ secrets.TP_TOKEN }}
       - name: Sestavení webu
         run: |
           rm -rf dist && mkdir -p dist/_state

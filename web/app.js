@@ -238,6 +238,21 @@ function fromData(J){
     ITEMS.push(o);
   });
 }
+// letenky z Travelpayouts (Aviasales): [odkud, kam, město, země, tam, zpět, cena, obvyklá, přestupy, odkaz, [lat,lon], km]
+PARTNER.a='Aviasales';
+function fromFlights(F,J){
+  var gen=new Date(J.gen);
+  F.f.forEach(function(r){
+    var dep=new Date(r[4]+'T00:00:00'), ret=new Date(r[5]+'T00:00:00'), days=Math.max(1,Math.round((ret-dep)/864e5));
+    var base=DEST[CTRY[r[3]]]||EXTRA[r[3]]||{};
+    var d={k:'f-'+r[1],city:r[2],ctry:r[3]||r[2],iata:r[1],fly:r[11]?Math.round((r[11]/780+.6)*10)/10:0,km:r[11]||0,sea:base.sea||null,temps:base.temps||[],sky:base.sky||['#e3efff','#9cbcf0','#26446f'],hint:base.hint||'',car:false};
+    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:['flights'],direct:r[8]===0,url:r[9],partner:'a',disc:0};
+    if(r[1]==='DXB') o.tags.push('dxbflight');
+    o.id=NEXT++; o.age=9999; o.isNew=false; o.drop=0; o.dropPct=0; o.ppn=Math.round(o.ppp/days);
+    o.checkedMin=Math.max(1,Math.round((Date.now()-gen)/6e4));
+    ITEMS.push(o);
+  });
+}
 // detail nabídky: popis, galerie, všechny termíny a odkaz k partnerovi (načítá se až při otevření)
 var DFILES={};
 function detailFile(name){if(!DFILES[name])DFILES[name]=fetch('data/d/'+name+'.json').then(function(r){if(!r.ok)throw 0;return r.json();});return DFILES[name];}
@@ -519,7 +534,7 @@ function openOffer(id,noHash){
   $('dBody').innerHTML=h; $('dBody').scrollTop=0;
   $('drawer').classList.add('on');$('scrim').classList.add('on');$('drawer').setAttribute('aria-hidden','false');$('dClose').focus({preventScroll:true});
   if(!noHash){try{history.replaceState(null,'','#nabidka-'+o.id)}catch(e){}}
-  if(!DEMO) enrich(o);
+  if(!DEMO&&o.type==='package') enrich(o);
   if($('watchBtn')) $('watchBtn').addEventListener('click',function(){toggleWatch(o,this);});
   $('shareBtn').addEventListener('click',function(){var u=location.href.split('#')[0]+'#nabidka-'+o.id;if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){toast('Odkaz zkopírován')},function(){toast(u)});else toast(u);});
 }
@@ -825,6 +840,6 @@ function greece(){
 }
 }
 fetch('data/main.json',{cache:'no-cache'}).then(function(r){if(!r.ok)throw 0;return r.json();})
-  .then(function(J){DEMO=false;fromData(J);start();})
+  .then(function(J){return fetch('data/flights.json',{cache:'no-cache'}).then(function(r){return r.ok?r.json():null}).catch(function(){return null}).then(function(F){DEMO=false;fromData(J);if(F)fromFlights(F,J);start();});})
   .catch(function(){DEMO=true;demoData();start();});
 })();

@@ -346,6 +346,75 @@ report.push(`Web: ${hotelsOut.length} hotelů, ${rows.length} termínů ve výpi
 await writeFile(OUT + 'offers.xml', x);
 await writeFile(OUT + 'hotels.xml', y);
 
+// ------------------------------------------------------------ letenky (Travelpayouts / Aviasales)
+// Potřebuje tajný token v proměnné TP_TOKEN (GitHub → Settings → Secrets → Actions → TP_TOKEN).
+// Bez tokenu se letenky přeskočí a web jede dál bez nich.
+async function flights() {
+  const TOKEN = process.env.TP_TOKEN, TP = cfg.travelpayouts || {};
+  if (!TOKEN && !process.argv.includes('--flights-local')) return { skipped: 'chybí TP_TOKEN' };
+  const ORIGINS = TP.origins || ['PRG', 'VIE', 'KTW', 'BUD', 'BTS', 'BRQ', 'OSR'];
+  const getJ = async (url, headers = {}) => {
+    for (let a = 1; a <= 3; a++) {
+      try { const r = await fetch(url, { headers }); if (!r.ok) throw new Error('HTTP ' + r.status); return await r.json(); }
+      catch (e) { if (a === 3) throw e; await sleep(2000 * a); }
+    }
+  };
+  let cities, countries;
+  if (process.argv.includes('--flights-local')) {
+    cities = JSON.parse(await readFile(HERE + 'raw/tp/cities.json', 'utf8'));
+    countries = JSON.parse(await readFile(HERE + 'raw/tp/countries.json', 'utf8'));
+  } else {
+    cities = await getJ('https://api.travelpayouts.com/data/cs/cities.json');
+    countries = await getJ('https://api.travelpayouts.com/data/cs/countries.json');
+  }
+  const CITY = Object.fromEntries(cities.map((c) => [c.code, c]));
+  const CTRY = Object.fromEntries(countries.map((c) => [c.code, c.name]));
+  const rows = [], log = [];
+  for (const o of ORIGINS) {
+    let data = [];
+    try {
+      if (process.argv.includes('--flights-local')) data = JSON.parse(await readFile(`${HERE}raw/tp/latest-${o}.json`, 'utf8')).data || [];
+      else {
+        const u = `https://api.travelpayouts.com/aviasales/v3/get_latest_prices?origin=${o}&currency=czk&period_type=year&one_way=false&limit=1000&page=1&sorting=price&show_to_affiliates=true`;
+        const j = await getJ(u, { 'X-Access-Token': TOKEN });
+        data = j.data || [];
+        await mkdir(HERE + 'raw/tp', { recursive: true });
+        await writeFile(`${HERE}raw/tp/latest-${o}.json`, JSON.stringify(j));
+      }
+    } catch (e) { log.push(`letenky ${o}: CHYBA ${e.message}`); continue; }
+    // obvyklá cena trasy = medián všech nalezených cen na dané trase
+    const byDest = {};
+    for (const f of data) {
+      if (!f.destination || !f.value || !f.depart_date || !f.return_date) continue;
+      if (f.depart_date < today) continue;
+      (byDest[f.destination] ??= []).push(f);
+    }
+    for (const [dst, arr] of Object.entries(byDest)) {
+      arr.sort((a, b) => a.value - b.value);
+      const prices = arr.map((f) => f.value), mid = prices[Math.floor(prices.length / 2)];
+      const c = CITY[dst] || CITY[(arr[0].destination_airport || '')] || {};
+      const city = (c.name_translations && (c.name_translations.cs || c.name_translations.en)) || c.name || dst;
+      // nejlevnější termín + pár dalších levných v jiných měsících
+      const seenM = new Set();
+      for (const f of arr) {
+        const m = f.depart_date.slice(0, 7);
+        if (seenM.has(m)) continue; seenM.add(m);
+        const dd = (s) => s.slice(8, 10) + s.slice(5, 7);
+        const search = `https://www.aviasales.com/search/${o}${dd(f.depart_date)}${dst}${dd(f.return_date)}1?currency=czk&locale=cs`;
+        const link = `https://tp.media/r?marker=${TP.marker}&trs=${TP.trs}&p=4114&campaign_id=100&u=${encodeURIComponent(search)}`;
+        rows.push([o, dst, city, CTRY[c.country_code] || c.country_code || '', f.depart_date, f.return_date, Math.round(f.value), Math.round(mid), f.number_of_changes ?? null, link, c.coordinates ? [c.coordinates.lat, c.coordinates.lon] : null, f.distance || null]);
+        if (seenM.size >= 3) break;
+      }
+    }
+    log.push(`letenky ${o}: ${data.length} cen, ${Object.keys(byDest).length} destinací`);
+  }
+  await mkdir(OUT + 'web', { recursive: true });
+  await writeFile(OUT + 'web/flights.json', JSON.stringify({ gen: now, f: rows }));
+  return { rows: rows.length, log };
+}
+const FL = await flights().catch((e) => ({ error: e.message }));
+report.push('', 'Letenky: ' + JSON.stringify(FL.rows !== undefined ? { rows: FL.rows } : FL), ...(FL.log || []));
+
 const per = (p) => allLive.filter((o) => o.partner === p).length;
 const countries = {}; for (const m of merged) countries[m.country] = (countries[m.country] || 0) + 1;
 report.push('',

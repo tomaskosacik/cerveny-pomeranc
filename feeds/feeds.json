@@ -202,5 +202,18 @@
         "name": "zanzibar"
       }
     ]
+  },
+  "travelpayouts": {
+    "marker": "808265",
+    "trs": "603430",
+    "origins": [
+      "PRG",
+      "VIE",
+      "KTW",
+      "BUD",
+      "BTS",
+      "BRQ",
+      "OSR"
+    ]
   }
 }
