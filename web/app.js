@@ -568,7 +568,40 @@ function home(){
   html+=shelf('zazitky','Eurovíkendy a zážitky','Let + hotel na pár dní','Polární záře na Islandu, psí spřežení v Laponsku, nebo prodloužený víkend v Paříži. Letenka i ubytování v jedné ceně.',withTag('combo'),'combo');
   if(withTag('lux').length) html+='<section class="wrap shelf" id="luxus"><div class="lux">'+'<div class="shelf-h"><div><div class="eyebrow">Pro náročné</div><h2>Když má být dovolená zážitek na celý život</h2><p>Pětihvězdičkové resorty, vily nad vodou a soukromé pláže. Hlídáme i tady, kdy je cena rozumná.</p></div><button type="button" class="all" style="color:#e6b45a" data-act="tag" data-tag="lux" data-name="Pro náročné">Zobrazit vše →</button></div>'+rail(bestOf(withTag('lux')).sort(function(a,b){return b.ppp-a.ppp}))+'</div></section>';
   html+=shelf('letenky','Letenky','Další letenkové poklady','Města i daleké cesty. Zpáteční ceny za osobu.',bestOf(withTag('flights')).sort(function(a,b){return b.idx-a.idx}),'flights');
+  if(!DEMO){
+    // automatické police z reálných dat (jen když mají dost nabídek)
+    var P=bestOf(ITEMS);
+    function auto(id,eye,h2,p,fn,sort,n){var l=P.filter(fn).sort(sort||function(a,b){return b.idx-a.idx});l=mix(l).slice(0,n||14);return l.length>=4?shelf(id,eye,h2,p,l,null):'';}
+    var byIdx=function(a,b){return b.idx-a.idx}, byPpn=function(a,b){return a.ppn-b.ppn}, byDep=function(a,b){return a.dep-b.dep};
+    var A=[];
+    A.push(auto('vikend','Rychlý únik','Prodloužený víkend u moře','3 až 5 nocí, odlet do dvou měsíců. Na baterky stačí.',function(o){return o.n>=3&&o.n<=5&&o.dep-TODAY<62*864e5},byIdx));
+    A.push(auto('tyden15','Do 15 000 Kč','Týden u moře do 15 000 Kč na osobu','Nejlevnější poctivé týdny. Pořád s letenkou, transferem a ubytováním.',function(o){return o.ppp<=15000&&o.n>=6},byIdx));
+    A.push(auto('ai','All inclusive','All inclusive, kde se vyplatí','Strava i pití v ceně, hotely s nejlepším poměrem cena/výkon.',function(o){return o.board==='AI'||o.board==='UAI'},byIdx));
+    A.push(auto('dlouhe','10 a více nocí','Dva týdny za cenu jednoho','Delší pobyty s nejnižší cenou za noc.',function(o){return o.n>=10},byPpn));
+    A.push(auto('hodnoceni','Hosté jsou nadšení','Nejlépe hodnocené hotely','Hodnocení 9/10 a víc od skutečných hostů.',function(o){return o.hotel&&o.hotel.rating>=9},byIdx));
+    A.push(auto('exotika','Exotika','Exotika do 40 000 Kč','Maledivy, Zanzibar, Thajsko, Karibik a další – za rozumné peníze.',function(o){return /Maledivy|Zanzibar|Thajsko|Mauricius|Seychely|Dominik|Mexiko|Kuba|Srí|Indon|Kapverd/.test(o.d.ctry)&&o.ppp<=40000},byIdx));
+    ['OSR','BRQ','VIE','KTW'].forEach(function(a){A.push(auto('z'+a,'Odlet '+AIR_FROM[a],'Nejlepší odlety '+AIR_FROM[a],'Když nechceš jezdit do Prahy.',function(o){return o.air===a},byIdx,12));});
+    // police po zemích podle počtu nabídek
+    var cnt={};P.forEach(function(o){cnt[o.d.ctry]=(cnt[o.d.ctry]||0)+1;});
+    Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]}).slice(0,10).forEach(function(c){
+      A.push(auto('z-'+slug(c),c,c+': nejlepší nabídky',cnt[c]+' hotelů s aktuálními termíny.',function(o){return o.d.ctry===c},byIdx,14));
+    });
+    // prokládat tematické a zemské police
+    html+=A.filter(Boolean).join('');
+  }
   $('shelves').innerHTML=html;
+  // nekonečný proud na konci stránky
+  if(!DEMO&&!document.getElementById('feed')){
+    var F=mix(bestOf(ITEMS).sort(function(a,b){return b.idx-a.idx})), fi=0;
+    var sec=document.createElement('section');sec.className='wrap shelf';sec.id='feed';
+    sec.innerHTML='<div class="shelf-h"><div><div class="eyebrow">Ještě nemáš dost?</div><h2>Další nabídky pro tebe</h2><p>Scrolluj dál, nabídky se načítají samy.</p></div></div><div id="feedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div><div id="feedEnd" style="height:40px"></div>';
+    var foot=document.querySelector('footer');foot.parentNode.insertBefore(sec,foot);
+    function more(){var add=F.slice(fi,fi+12);fi+=add.length;$('feedGrid').insertAdjacentHTML('beforeend',add.map(tile).join(''));if(fi>=F.length){$('feedEnd').textContent='To je všechno. Další várka cen za '+document.querySelector('[data-cd]').textContent+'.';$('feedEnd').className='mono';}}
+    more();
+    if('IntersectionObserver' in window) new IntersectionObserver(function(e){if(e[0].isIntersecting&&fi<F.length)more();},{rootMargin:'800px'}).observe($('feedEnd'));
+  }
+  // výpis nahoře: další nabídky se načítají samy při scrollu (max 60, pak tlačítko)
+  if('IntersectionObserver' in window){var autoN=0;new IntersectionObserver(function(e){if(e[0].isIntersecting&&!$('moreBtn').hidden&&autoN<5){autoN++;$('moreBtn').click();}},{rootMargin:'300px'}).observe($('moreBtn'));}
 
   function springRail(w){if(!$('springRail'))return;var l=bestOf(withTag('sw'+w)).sort(function(a,b){return b.idx-a.idx});$('springRail').innerHTML='<div class="rail">'+l.map(tile).join('')+'</div>';}
   springRail(5);
