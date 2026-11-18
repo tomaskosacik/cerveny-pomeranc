@@ -494,9 +494,17 @@ function home(){
     var b=base();
     $('tabs').innerHTML=TABS.map(function(t){var n=b.filter(function(o){return inTab(o,t[0])}).length;if(!n&&t[0]!=='all'&&t[0]!==S.tab)return '';return '<button type="button" role="tab" data-tab="'+t[0]+'" aria-selected="'+(S.tab===t[0]&&!S.savedOnly)+'">'+t[1]+' <span>'+n+'</span></button>';}).join('');
     var l=b.filter(function(o){return S.savedOnly||inTab(o,S.tab)}).sort(function(a,c){if(S.sort==='day')return a.ppn-c.ppn;if(S.sort==='price')return a.ppp-c.ppp;if(S.sort==='drop')return c.dropPct-a.dropPct;if(S.sort==='new')return a.age-c.age;return c.idx-a.idx;});
-    if(S.sort==='idx'&&!S.q&&!S.dest&&!S.savedOnly) l=mix(l);
+    if(S.sort==='idx'&&!S.savedOnly){
+      if(S.tab==='lm') l.sort(function(a,c){return a.dep-c.dep||c.idx-a.idx;});
+      else if(S.tab==='sleva') l.sort(function(a,c){return Math.max(c.disc||0,c.dropPct*100)-Math.max(a.disc||0,a.dropPct*100)||c.idx-a.idx;});
+      else if(S.tab==='poklady') l.sort(function(a,c){return c.idx-a.idx||a.ppn-c.ppn;});
+      else if(S.tab==='lux') l.sort(function(a,c){return c.hotel&&a.hotel?(c.hotel.rating||0)-(a.hotel.rating||0)||c.ppp-a.ppp:0;});
+      else if(S.tab==='fm') l.sort(function(a,c){return a.ppn-c.ppn;});
+      if(!S.q&&!S.dest&&S.tab!=='lm') l=mix(l);
+    }
+    var NOTE={all:'Nejlepší nabídky napříč destinacemi, seřazené podle Pomeranč indexu.',poklady:'Poklady: index 88 a víc nebo výrazný pokles ceny. Nejvýhodnější nahoře.',lm:'Odlet do 3 týdnů. Seřazeno od nejbližšího odletu.',sleva:'Nejvyšší slevy nahoře – sleva u cestovky nebo pokles ceny u nás.',fm:'Léto a podzim 2027. Seřazeno od nejnižší ceny za noc.',lux:'Pětihvězdičkové hotely a exotika, nejlépe hodnocené nahoře.',nove:'Nové nabídky za posledních 24 hodin.'};
     var chip=S.savedOnly?'Uložené nabídky':S.tag?S.tagName:S.dest?'Jen '+DEST[S.dest].city:'';
-    $('list').innerHTML=(chip?'<p class="mono" style="font-size:12px;color:var(--mute);margin:12px 0 0">'+esc(chip)+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zpět na celý výpis</button></p>':'')+
+    $('list').innerHTML=(!chip&&!S.q&&NOTE[S.tab]&&S.sort==='idx'?'<p class="mono" style="font-size:12px;color:var(--mute);margin:12px 0 0">'+NOTE[S.tab]+'</p>':'')+(chip?'<p class="mono" style="font-size:12px;color:var(--mute);margin:12px 0 0">'+esc(chip)+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zpět na celý výpis</button></p>':'')+
       (l.length?l.slice(0,shown).map(row).join(''):'<div class="empty">'+(S.savedOnly?'Zatím nic uloženého. Klikni na ♥ u nabídky.':'Na tenhle výběr teď nic nemáme. Zkus jiný termín nebo vyšší rozpočet.')+'</div>');
     $('moreBtn').hidden=l.length<=shown;
     $('ddMonth').classList.toggle('on',S.month!=='all');$('ddMax').classList.toggle('on',!!S.max);$('ddBoard').classList.toggle('on',!!S.board);$('ddAir').classList.toggle('on',!!S.air);

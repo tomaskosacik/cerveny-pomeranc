@@ -187,7 +187,7 @@ for (const h of hotels.values()) {
 // --- jen budoucí termíny
 const today = new Date().toISOString().slice(0, 10);
 const byHotel = new Map();
-for (const o of offers.values()) if (o.from >= today) (byHotel.get(o.hotelKey) ?? byHotel.set(o.hotelKey, []).get(o.hotelKey)).push(o);
+for (const o of offers.values()) if (o.from >= today && o.nights >= 1 && o.nights <= 40) (byHotel.get(o.hotelKey) ?? byHotel.set(o.hotelKey, []).get(o.hotelKey)).push(o);
 for (const a of byHotel.values()) a.sort((x, y) => x.price - y.price || x.from.localeCompare(y.from));
 
 // --- sloučení stejného hotelu u různých partnerů (souřadnice do 1,5 km + shoda slova v názvu, nebo stejný název a země)
