@@ -1,0 +1,47 @@
+name: Aktualizace webu
+# Každé 2 hodiny stáhne feedy partnerů, přepočítá data a nasadí web do větve `site`.
+# Cloudflare Pages publikuje větev `site` (bez build příkazu, výstupní složka /).
+on:
+  schedule:
+    - cron: '17 */2 * * *'
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+permissions:
+  contents: write
+concurrency:
+  group: site
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - name: Historie cen z minulého běhu
+        run: |
+          mkdir -p feeds/state
+          git fetch --depth 1 origin site && git show origin/site:_state/prices.json > feeds/state/prices.json || echo "první běh"
+      - run: npm ci
+        working-directory: feeds
+      - run: node convert.mjs
+        working-directory: feeds
+      - name: Sestavení webu
+        run: |
+          rm -rf dist && mkdir -p dist/_state
+          cp -r web/. dist/
+          cp -r feeds/out/web dist/data
+          cp feeds/state/prices.json dist/_state/prices.json
+          cp feeds/out/report.txt dist/_state/report.txt
+          printf '/data/*\n  Cache-Control: public, max-age=300\n/_state/*\n  X-Robots-Tag: noindex\n' > dist/_headers
+      - name: Nasazení do větve site
+        run: |
+          cd dist
+          git init -q -b site
+          git config user.name "pomeranc-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add -A
+          git commit -qm "web $(date -u +%FT%TZ)"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" site

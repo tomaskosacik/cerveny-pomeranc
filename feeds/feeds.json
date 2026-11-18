@@ -1,0 +1,206 @@
+{
+  "dovolena": {
+    "base": "https://aff.dovolena.cz/campaign/offerFeed?cid=",
+    "feeds": [
+      {
+        "id": "24449",
+        "name": "vse-pobytove"
+      },
+      {
+        "id": "24450",
+        "name": "egypt"
+      },
+      {
+        "id": "24451",
+        "name": "turecko"
+      },
+      {
+        "id": "24453",
+        "name": "recko"
+      },
+      {
+        "id": "24454",
+        "name": "spanelsko"
+      },
+      {
+        "id": "24455",
+        "name": "sae"
+      },
+      {
+        "id": "24456",
+        "name": "tunisko"
+      },
+      {
+        "id": "24457",
+        "name": "bulharsko"
+      },
+      {
+        "id": "24458",
+        "name": "italie"
+      },
+      {
+        "id": "24459",
+        "name": "kypr"
+      },
+      {
+        "id": "24460",
+        "name": "chorvatsko"
+      },
+      {
+        "id": "24461",
+        "name": "maledivy"
+      },
+      {
+        "id": "24462",
+        "name": "mauricius"
+      },
+      {
+        "id": "24463",
+        "name": "thajsko"
+      },
+      {
+        "id": "24464",
+        "name": "zanzibar"
+      },
+      {
+        "id": "24465",
+        "name": "kapverdy"
+      },
+      {
+        "id": "24466",
+        "name": "dominikanska-republika"
+      },
+      {
+        "id": "24467",
+        "name": "mexiko"
+      },
+      {
+        "id": "24468",
+        "name": "portugalsko"
+      },
+      {
+        "id": "24469",
+        "name": "maroko"
+      },
+      {
+        "id": "24470",
+        "name": "oman"
+      },
+      {
+        "id": "24471",
+        "name": "seychely"
+      },
+      {
+        "id": "24472",
+        "name": "sri-lanka"
+      },
+      {
+        "id": "24473",
+        "name": "albanie"
+      },
+      {
+        "id": "24474",
+        "name": "cerna-hora"
+      },
+      {
+        "id": "24475",
+        "name": "malta"
+      },
+      {
+        "id": "24476",
+        "name": "kuba"
+      },
+      {
+        "id": "24477",
+        "name": "indonesie"
+      },
+      {
+        "id": "24478",
+        "name": "eurovikendy"
+      }
+    ]
+  },
+  "invia": {
+    "base": "https://affil.invia.cz/direct/core/tool_xml-feed/download/id/2803411-",
+    "suffix": "/",
+    "aid": "2803411",
+    "feeds": [
+      {
+        "id": "6afe130fa672b",
+        "name": "nejprodavanejsi"
+      },
+      {
+        "id": "6afe13289d39f",
+        "name": "bomby"
+      },
+      {
+        "id": "6afe135a811f3",
+        "name": "egypt"
+      },
+      {
+        "id": "6afe13a8b54eb",
+        "name": "turecko"
+      },
+      {
+        "id": "6afe13c245e02",
+        "name": "recko"
+      },
+      {
+        "id": "6afe13dcba1e4",
+        "name": "tunisko"
+      },
+      {
+        "id": "6afe13facde49",
+        "name": "kanary"
+      },
+      {
+        "id": "6afe1414199e6",
+        "name": "spanelsko"
+      },
+      {
+        "id": "6afe14310beef",
+        "name": "bulharsko"
+      },
+      {
+        "id": "6afe146ecfafb",
+        "name": "kypr"
+      },
+      {
+        "id": "6afe1495df05b",
+        "name": "sae"
+      },
+      {
+        "id": "6afe14c6cc127",
+        "name": "thajsko"
+      },
+      {
+        "id": "6afe14e5cc693",
+        "name": "maledivy"
+      },
+      {
+        "id": "6afe15083b0a3",
+        "name": "italie"
+      },
+      {
+        "id": "6afe152c1f5f9",
+        "name": "dominikanska-republika"
+      },
+      {
+        "id": "6afe154ba18c4",
+        "name": "kapverdy"
+      },
+      {
+        "id": "6afe156aefd22",
+        "name": "mexiko"
+      },
+      {
+        "id": "6afe158a4c0b0",
+        "name": "mauricius"
+      },
+      {
+        "id": "6afe15adf173f",
+        "name": "zanzibar"
+      }
+    ]
+  }
+}
