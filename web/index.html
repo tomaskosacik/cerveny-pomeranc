@@ -149,7 +149,12 @@
     <div class="p"><div class="phone"><div class="ic"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#og"/></svg><b id="badge">12</b></div>
       <div><h3 id="app-h">Pomeranč na ploše</h3><p style="margin:0">Přidej si web na plochu jako aplikaci. Číslo na ikoně ukáže, kolik přibylo nových pokladů.</p></div></div>
       <p style="margin-top:12px"><b>iPhone:</b> Safari → Sdílet → Přidat na plochu. <b>Android:</b> menu prohlížeče → Přidat na plochu.</p></div>
-    <div class="p"><h3>Ranní poklady</h3><p>Jednou denně v osm ráno upozornění, kolik přibylo pokladů z tvého letiště. Vypneš jedním klepnutím.</p><p style="font-size:12px;color:var(--mute)">Upozornění spouštíme v nejbližších týdnech.</p></div>
+    <div class="p" id="ranni"><h3>Ranní poklady</h3><p>Jednou denně kolem osmé ráno upozornění, kolik přibylo nových a zlevněných zájezdů z tvého letiště, a nejlepší poklad dne. Vypneš jedním klepnutím.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+        <select id="pushAir" aria-label="Odletové letiště" style="padding:10px 12px;border-radius:12px;border:1px solid var(--line);font:inherit;background:var(--surface)"><option value="">Všechna letiště</option><option value="PRG">Praha</option><option value="BRQ">Brno</option><option value="OSR">Ostrava</option><option value="PED">Pardubice</option><option value="VIE">Vídeň</option><option value="KTW">Katovice</option><option value="BTS">Bratislava</option></select>
+        <button type="button" class="btn or" id="pushOn">Zapnout ranní poklady</button>
+      </div>
+      <p id="pushMsg" style="font-size:13px;color:var(--mute);margin:10px 0 0"></p></div>
   </div>
 </section>
 

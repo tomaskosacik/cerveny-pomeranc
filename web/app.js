@@ -242,6 +242,51 @@ function fromData(J){
 var DFILES={};
 function detailFile(name){if(!DFILES[name])DFILES[name]=fetch('data/d/'+name+'.json').then(function(r){if(!r.ok)throw 0;return r.json();});return DFILES[name];}
 
+// ------------------------------------------------------------------ push: ranní poklady a hlídací pes
+var PUSH_ID=null, WATCH=[];
+try{PUSH_ID=localStorage.getItem('cp_push_id');WATCH=JSON.parse(localStorage.getItem('cp_watch')||'[]');}catch(e){}
+function saveWatch(){try{localStorage.setItem('cp_watch',JSON.stringify(WATCH))}catch(e){}}
+var IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+var IS_APP=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+function pushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
+function b64uToU8(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var r=atob(s),a=new Uint8Array(r.length);for(var i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a;}
+function api(path,body){return fetch('/api/'+path,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{cache:'no-store'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||r.status);return j;});});}
+function pushError(e){
+  var m=String(e&&e.message||e);
+  if(m==='ios') return 'Na iPhonu fungují upozornění jen z aplikace na ploše: v Safari klepni na Sdílet → Přidat na plochu, otevři Pomeranč z plochy a zapni to tam.';
+  if(m==='unsupported') return 'Tenhle prohlížeč upozornění neumí. Zkus Chrome nebo Safari.';
+  if(m==='denied') return 'Upozornění jsou v prohlížeči zakázaná. Povol je v nastavení webu (ikona zámku vedle adresy).';
+  return 'Nepovedlo se: '+m;
+}
+function ensureSub(opts){
+  if(!pushSupported()) return Promise.reject(new Error(IS_IOS&&!IS_APP?'ios':'unsupported'));
+  var reg;
+  return navigator.serviceWorker.register('/sw.js').then(function(r){reg=r;return Notification.requestPermission();})
+    .then(function(p){if(p!=='granted')throw new Error('denied');return navigator.serviceWorker.ready;})
+    .then(function(){return reg.pushManager.getSubscription();})
+    .then(function(s){return s||api('vapid').then(function(k){return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uToU8(k.key)});});})
+    .then(function(s){var b={sub:s.toJSON()};if(opts&&'air' in opts)b.air=opts.air;if(opts&&'daily' in opts)b.daily=opts.daily;return api('subscribe',b);})
+    .then(function(j){PUSH_ID=j.id;try{localStorage.setItem('cp_push_id',j.id)}catch(e){}return j;});
+}
+if(PUSH_ID&&pushSupported()) navigator.serviceWorker.register('/sw.js').catch(function(){});
+if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
+function isWatched(gid){return WATCH.indexOf(gid)>=0;}
+function toggleWatch(o,btn){
+  var gid=o.hotel&&o.hotel.gid; if(!gid) return;
+  if(isWatched(gid)){
+    api('unwatch',{id:PUSH_ID,gid:gid}).catch(function(){});
+    WATCH=WATCH.filter(function(x){return x!==gid});saveWatch();btn.textContent='🔔 Hlídat cenu';toast('Hlídání zrušeno');return;
+  }
+  btn.disabled=true;btn.textContent='Zapínám…';
+  var price=o.hotelMin||o.ppp;
+  (PUSH_ID?Promise.resolve({id:PUSH_ID}):ensureSub({daily:false}))
+    .then(function(){return api('watch',{id:PUSH_ID,gid:gid,file:o.file,name:o.hotel.name,price:price});})
+    .catch(function(e){if(/neznámý odběr/.test(String(e&&e.message))){PUSH_ID=null;return ensureSub({daily:false}).then(function(){return api('watch',{id:PUSH_ID,gid:gid,file:o.file,name:o.hotel.name,price:price});});}throw e;})
+    .then(function(){WATCH.push(gid);saveWatch();btn.textContent='✓ Hlídáš cenu';toast('Hlídám. Dám vědět, až '+o.hotel.name+' zlevní pod '+kc(price)+'.');})
+    .catch(function(e){btn.textContent='🔔 Hlídat cenu';toast(pushError(e));})
+    .then(function(){btn.disabled=false;});
+}
+
 // ================================================================== start (po načtení dat)
 function start(){
 // ------------------------------------------------------------------ Pomeranč index a anomálie
@@ -405,12 +450,13 @@ function openOffer(id,noHash){
   if(hh.length>=3) h+='<div class="dsec"><h4>Vývoj ceny u nás · '+hh.length+' dní</h4><svg class="spk" viewBox="0 0 500 90" role="img" aria-label="Vývoj ceny za 14 dní">'+spark(hh,500,90,false)+'</svg><div class="mono" style="display:flex;justify-content:space-between;font-size:11px;color:var(--mute)"><span>před 14 dny '+kc(hh[0])+'</span><span>max '+kc(mx)+' · min '+kc(mn)+'</span><span>dnes '+kc(hh[13])+'</span></div></div>';
   h+='<div class="dsec" id="dAbout"'+(o.d.hint?'':' hidden')+'><h4>'+(DEMO?'Proč tam':'O hotelu')+'</h4><p style="margin:0" id="dPerex">'+esc(o.d.hint)+'</p></div><div class="dsec" id="dCmp" hidden></div>';
   if(DEMO) h+='<div class="demo-note">Zkušební provoz: '+(o.type==='flight'?'letenka':o.type==='hotel'?'hotel':'nabídka')+' a cena jsou ukázka, jak bude výpis vypadat. Tlačítko tě zatím pošle na aktuální nabídku u partnera.</div>';
-  h+='<div class="cta-row"><button type="button" class="btn ghost" data-save="'+o.id+'" aria-pressed="'+isSaved(o.id)+'">♥</button><button type="button" class="btn ghost" id="shareBtn">Sdílet</button><a class="btn or" id="dGo" href="'+esc(linkOf(o))+'" target="_blank" rel="sponsored nofollow noopener"'+(!DEMO&&!o.url?' aria-disabled="true" style="opacity:.6;pointer-events:none"':'')+'>'+(o.partner?'Na '+PARTNER[o.partner]+' →':'K nabídce →')+'</a></div>';
+  h+='<div class="cta-row"><button type="button" class="btn ghost" data-save="'+o.id+'" aria-pressed="'+isSaved(o.id)+'">♥</button>'+(!DEMO&&o.hotel&&o.hotel.gid?'<button type="button" class="btn ghost" id="watchBtn">'+(isWatched(o.hotel.gid)?'✓ Hlídáš cenu':'🔔 Hlídat cenu')+'</button>':'')+'<button type="button" class="btn ghost" id="shareBtn">Sdílet</button><a class="btn or" id="dGo" href="'+esc(linkOf(o))+'" target="_blank" rel="sponsored nofollow noopener"'+(!DEMO&&!o.url?' aria-disabled="true" style="opacity:.6;pointer-events:none"':'')+'>'+(o.partner?'Na '+PARTNER[o.partner]+' →':'K nabídce →')+'</a></div>';
   $('dEyebrow').textContent=({flight:'Letenka',hotel:'Ubytování',combo:'Let + hotel',package:'Zájezd'})[o.type]+' #'+o.id+' · index '+o.idx;
   $('dBody').innerHTML=h; $('dBody').scrollTop=0;
   $('drawer').classList.add('on');$('scrim').classList.add('on');$('drawer').setAttribute('aria-hidden','false');$('dClose').focus({preventScroll:true});
   if(!noHash){try{history.replaceState(null,'','#nabidka-'+o.id)}catch(e){}}
   if(!DEMO) enrich(o);
+  if($('watchBtn')) $('watchBtn').addEventListener('click',function(){toggleWatch(o,this);});
   $('shareBtn').addEventListener('click',function(){var u=location.href.split('#')[0]+'#nabidka-'+o.id;if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){toast('Odkaz zkopírován')},function(){toast(u)});else toast(u);});
 }
 function enrich(o){
@@ -418,6 +464,7 @@ function enrich(o){
     if($('dEyebrow').textContent.indexOf('#'+o.id+' ')<0) return;
     o.url=D.u[o.okey]; var go=$('dGo'); if(go&&o.url){go.href=o.url;go.removeAttribute('aria-disabled');go.style.opacity='';go.style.pointerEvents='';}
     var H=D.h[o.hotel.gid]; if(!H) return;
+    o.hotelMin=Math.min.apply(null,H.t.map(function(t){return t[5]}));
     if(H.p){$('dPerex').textContent=H.p;$('dAbout').hidden=false;}
     var mineT=H.t.filter(function(t){return t[0]===o.partner}), other=o.partner==='d'?'i':'d', alt=H.t.filter(function(t){return t[0]===other}).sort(function(a,b){return a[5]-b[5]})[0];
     var html='<h4>Kde to koupit</h4><div class="alt"><div class="best"><span>'+PARTNER[o.partner]+' · '+mineT.length+' termínů</span><b class="num">od '+kc(Math.min.apply(null,mineT.map(function(t){return t[5]})))+'</b></div>';
@@ -451,6 +498,7 @@ window.addEventListener('hashchange',function(){var m=location.hash.match(/^#nab
 var MAIN=DEMO?bestOf(ITEMS.filter(function(o){return o.tags.indexOf('greece')<0||o.tags.indexOf('july')>=0})):bestOf(ITEMS);
 if(PAGE==='home') home(); else if(PAGE==='greece') greece();
 var mh=location.hash.match(/^#nabidka-(\d+)$/);if(mh)openOffer(mh[1],true);
+var hh=location.hash.match(/^#hotel-(.+)$/);if(hh){var hg=decodeURIComponent(hh[1]),cand=ITEMS.filter(function(o){return o.hotel&&o.hotel.gid===hg}).sort(function(a,b){return a.ppp-b.ppp})[0];if(cand)openOffer(cand.id);}
 
 function home(){
   // statistiky
@@ -588,6 +636,21 @@ function home(){
     });
     // prokládat tematické a zemské police
     html+=A.filter(Boolean).join('');
+  }
+  if($('pushOn')){
+    var pon=$('pushOn'),pmsg=$('pushMsg'),pair=$('pushAir');
+    function pushUI(st){if(st&&st.daily){pon.textContent='Vypnout ranní poklady';pon.className='btn ghost';pmsg.textContent='Zapnuto'+(st.air?' pro odlety '+(AIR_FROM[st.air]||st.air):'')+'. Další poklady zítra kolem osmé.';if(st.air)pair.value=st.air;}else{pon.textContent='Zapnout ranní poklady';pon.className='btn or';}}
+    if(PUSH_ID) api('me?id='+encodeURIComponent(PUSH_ID)).then(pushUI).catch(function(){PUSH_ID=null;});
+    if(IS_IOS&&!IS_APP) pmsg.textContent='Na iPhonu nejdřív přidej Pomeranč na plochu (Safari → Sdílet → Přidat na plochu) a zapni to z aplikace.';
+    pon.addEventListener('click',function(){
+      var turnOff=pon.textContent.indexOf('Vypnout')===0; pon.disabled=true;
+      (turnOff?navigator.serviceWorker.ready.then(function(r){return r.pushManager.getSubscription();}).then(function(s){return api('subscribe',{sub:s.toJSON(),daily:false});})
+              :ensureSub({daily:true,air:pair.value}))
+        .then(function(j){pushUI(j);toast(turnOff?'Ranní poklady vypnuty':'Hotovo, ranní poklady zapnuté ☀');})
+        .catch(function(e){pmsg.textContent=pushError(e);})
+        .then(function(){pon.disabled=false;});
+    });
+    pair.addEventListener('change',function(){if(PUSH_ID&&pon.textContent.indexOf('Vypnout')===0)ensureSub({daily:true,air:pair.value}).then(pushUI).catch(function(){});});
   }
   $('shelves').innerHTML=html;
   // nekonečný proud na konci stránky

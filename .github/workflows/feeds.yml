@@ -4,6 +4,7 @@ name: Aktualizace webu
 on:
   schedule:
     - cron: '17 */2 * * *'
+    - cron: '50 6 * * *'   # ranní poklady (cca 7:50 v zimě, 8:50 v létě)
   push:
     branches: [main]
   workflow_dispatch: {}
@@ -45,3 +46,13 @@ jobs:
           git add -A
           git commit -qm "web $(date -u +%FT%TZ)"
           git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" site
+      - name: Push upozornění (ranní poklady, hlídací pes)
+        run: |
+          sleep 150   # Cloudflare mezitím nasadí novou verzi
+          for i in $(seq 1 60); do
+            r=$(curl -s -m 60 https://cervenypomeranc.cz/api/notify || echo '{}')
+            echo "$r"
+            echo "$r" | grep -q '"done":true' && break
+            echo "$r" | grep -q '"error"' && break
+            sleep 2
+          done
