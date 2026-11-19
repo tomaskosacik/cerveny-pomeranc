@@ -1,6 +1,6 @@
 // Souhlas s cookies + Meta pixel. Pixel se načte jen po souhlasu.
 (function(){
-  var PIXEL_ID=''; // ← sem patří ID pixelu z Ads Manageru (jen čísla)
+  var PIXEL_ID='816599144810625'; // pixel z reklamního účtu KÓD6, data Pomeranče se rozliší podle domény
   var K='cp_consent', st=null;
   try{st=localStorage.getItem(K)}catch(e){}
   function loadTP(){var s=document.createElement('script');s.async=1;s.setAttribute('data-cfasync','false');s.src='https://emrldtp.cc/NjAzNDMw.js?t=603430';document.head.appendChild(s);}
