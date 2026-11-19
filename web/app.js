@@ -414,7 +414,7 @@ function why(o){
   if(o.anom) return o.anom.txt;
   if(o.type==='combo') return o.what.charAt(0).toUpperCase()+o.what.slice(1)+'.';
   if(o.hotel&&o.hotel.rating>=8.8) return 'Hosté hodnotí '+String(o.hotel.rating).replace('.',',')+'/10'+(o.hotel.reviews?' ('+o.hotel.reviews.toLocaleString('cs-CZ')+' hodnocení)':'')+'.';
-  if(o.disc>=10) return 'Sleva '+o.disc+' % oproti ceníku u '+PARTNER[o.partner]+'.';
+  if(o.disc>=10) return 'Cestovka sama zlevnila o '+o.disc+' %.';
   if(o.hotel&&o.hotel.beach===0) return 'Hotel stojí přímo na pláži.';
   return o.d.hint;
 }
@@ -557,9 +557,8 @@ function enrich(o){
     if(!H) return;
     o.hotelMin=Math.min.apply(null,H.t.map(function(t){return t[5]}));
     if(H.p){$('dPerex').textContent=H.p;$('dAbout').hidden=false;}
-    var mineT=H.t.filter(function(t){return t[0]===o.partner}), other=o.partner==='d'?'i':'d', alt=H.t.filter(function(t){return t[0]===other}).sort(function(a,b){return a[5]-b[5]})[0];
-    var html='<h4>Kde to koupit</h4><div class="alt"><div class="best"><span>'+PARTNER[o.partner]+' · '+mineT.length+' termínů</span><b class="num">od '+kc(Math.min.apply(null,mineT.map(function(t){return t[5]})))+'</b></div>';
-    if(alt){var au=D.u[alt[6]];html+='<div><span>'+PARTNER[other]+' · nejlevněji '+ds(new Date(alt[1]+'T00:00:00'))+', '+nights(alt[2])+'</span><b class="num">'+(au?'<a href="'+esc(au)+'" target="_blank" rel="sponsored nofollow noopener">'+kc(alt[5])+' →</a>':kc(alt[5]))+'</b></div>';}
+    var mn=Math.min.apply(null,H.t.map(function(t){return t[5]}));
+    var html='<h4>Tenhle hotel</h4><div class="alt"><div class="best"><span>'+H.t.length+' termínů v nabídce</span><b class="num">od '+kc(mn)+'</b></div></div>';
     $('dCmp').innerHTML=html+'</div>'; $('dCmp').hidden=false;
   }).catch(function(){var go=$('dGo');if(go)go.textContent='Odkaz se nepodařilo načíst';});
 }
@@ -598,7 +597,7 @@ function letenkovePoklady(){
   var FL=ITEMS.filter(function(o){return o.type==='flight'});
   var slot=$('lp-slot'); if(!slot||!FL.length) return;
   var REG={asie:/Thajsko|Vietnam|Indonésie|Malajsie|Singapur|Japonsko|Korea|Čína|Hongkong|Srí Lanka|Maledivy|Indie|Filipíny|Kambodža|Nepál|Tchaj/,arabie:/Emiráty|Katar|Omán|Saúdská|Bahrajn|Jordánsko|Kuvajt/,amerika:/Spojené státy|Kanada|Mexiko|Kuba|Dominik|Brazílie|Argentina|Kolumbie|Peru|Chile|Kostarika|Panama|Jamajka|Portoriko/,afrika:/Tanzanie|Zanzibar|Keňa|Jihoafrická|Mauricius|Seychely|Kapverdy|Madagaskar|Egypt|Maroko|Réunion|Kanárské|Španělsko|Portugalsko/};
-  var S={reg:'',air:'',cls:0};
+  var S={reg:'',air:'',cls:0,lim:8};
   function region(o){for(var k in REG)if(REG[k].test(o.d.ctry))return k;return 'jine';}
   function hours(o){return o.d.fly?String(o.d.fly).replace('.',',')+' h':'';}
   function card(l){
@@ -620,50 +619,188 @@ function letenkovePoklady(){
     var DREAM=['BKK','DXB','NYC','DPS','TYO','HKT','MLE','CUN','PUJ','ZNZ','SIN','CMB','SGN','HAN','SEL','MIA','LAX','LAS','SFO','MEX','HAV','RIO','BUE','MRU','SEZ','HKG','KUL','DOH','AUH','MCT','SYD','MEL','CPT','NBO','RAK','TFS','LPA','FNC','KEF','SID','PEK','SHA','MNL','REP','KTM','DEL','GOI','YTO','YVR','BOS','CHI','ORL','LIM','BOG','SJO','AKL','JNB','MBA','DAR','SSH','HRG'];
     keys=keys.filter(function(k){return !/Kazachstán|Kyrgyzstán|Uzbekistán|Tádžikistán|Turkmenistán|Afghánistán|Pákistán|Irák|Írán|Ázerbájdžán/.test(g[k][0].d.ctry)});
     keys.sort(function(a,b){var da=DREAM.indexOf(a),db=DREAM.indexOf(b);if(da<0)da=999;if(db<0)db=999;if(da!==db)return da-db;var x=g[a][0],y=g[b][0];return (y.typical-y.ppp)/y.typical-(x.typical-x.ppp)/x.typical||y.d.km-x.d.km;});
-    $('lpGrid').innerHTML=keys.length?keys.slice(0,24).map(function(k){return card(g[k]);}).join(''):'<p class="lp-empty">Na tenhle výběr teď nic nemáme. Zkus jiné letiště.</p>';
+    $('lpGrid').innerHTML=keys.length?keys.slice(0,S.lim).map(function(k){return card(g[k]);}).join(''):'<p class="lp-empty">Na tenhle výběr teď nic nemáme. Zkus jiné letiště.</p>';$('lpMore').hidden=keys.length<=S.lim;
   }
   var airs=['','PRG','VIE','KTW','BUD','BTS'];
   slot.outerHTML='<section class="lp" id="letenky" aria-labelledby="lp-h"><div class="wrap">'+
-    '<div class="lp-head"><div class="lp-eye">KAM POLETÍME</div><h2 id="lp-h">Letenkové poklady</h2><p>Daleké lety, kde se letenka opravdu vyplatí. Zpáteční ceny z posledních hodin, odlety z Prahy a okolních letišť. Ubytování si dokoupíš na místě.</p></div>'+
+    '<div class="lp-head"><div class="lp-eye">KAM POLETÍME</div><h2 id="lp-h">Letenkové poklady</h2><p>Jen daleké lety, kde se letenka opravdu vyplatí. Zpáteční ceny z posledních hodin z Prahy a okolních letišť. Ubytování si zařídíš sám.</p></div>'+
     '<div class="lp-chips" id="lpReg">'+[['','Všude'],['asie','Asie'],['arabie','Arábie'],['amerika','Amerika'],['afrika','Afrika a ostrovy'],['biz','Business class']].map(function(c,i){return '<button type="button" data-r="'+c[0]+'" aria-pressed="'+(i===0)+'">'+c[1]+'</button>';}).join('')+'</div>'+
     '<div class="lp-chips small" id="lpAir">'+airs.map(function(a,i){return '<button type="button" data-a="'+a+'" aria-pressed="'+(i===0)+'">'+(a?AIR_FROM[a]:'odkudkoli')+'</button>';}).join('')+'</div>'+
-    '<div class="lp-grid" id="lpGrid"></div></div></section>';
-  $('lpReg').addEventListener('click',function(e){var b=e.target.closest('[data-r]');if(!b)return;var r=b.getAttribute('data-r');S.cls=r==='biz'?1:0;S.reg=r==='biz'?'':r;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
-  $('lpAir').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b)return;S.air=b.getAttribute('data-a');this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+    '<div class="lp-grid" id="lpGrid"></div><button type="button" class="lp-more" id="lpMore">Ukázat další destinace</button></div></section>';
+  $('lpReg').addEventListener('click',function(e){var b=e.target.closest('[data-r]');if(!b)return;S.lim=8;var r=b.getAttribute('data-r');S.cls=r==='biz'?1:0;S.reg=r==='biz'?'':r;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+  $('lpAir').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b)return;S.lim=8;S.air=b.getAttribute('data-a');this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+  $('lpMore').addEventListener('click',function(){S.lim+=16;render();});
   render();
 }
 function home(){
-  // statistiky
-  var newC=MAIN.filter(function(o){return o.isNew||o.age<24}).length, dropC=MAIN.filter(function(o){return o.dropPct>=.06}).length;
-  function anim(el,to){var t0=performance.now();(function st(t){var k=Math.min(1,((t||t0)-t0)/900);el.textContent=Math.round(to*(1-Math.pow(1-k,3))).toLocaleString('cs-CZ');if(k<1)requestAnimationFrame(st);})(t0);}
-  var treasC=MAIN.filter(isTreasure).length, discC=MAIN.filter(function(o){return o.disc>=10}).length;
-  var s1=$('sNew').closest('.stat'), s2=$('sDrop').closest('.stat');
-  if(!DEMO){
-    s1.querySelector('.k').textContent='Pokladů teď'; s1.querySelector('.v').innerHTML='<span id="sNew">0</span>'; s1.setAttribute('data-act','poklady'); s1.style.cursor='pointer';
-    if(!dropC){s2.querySelector('.k').textContent='Ve slevě u cestovek';}
-    s2.setAttribute('data-act','sleva'); s2.style.cursor='pointer';
+  var P=bestOf(MAIN.filter(function(o){return o.type==='package'&&o.hotel}));
+  var ALLP=MAIN.filter(function(o){return o.type==='package'&&o.hotel});
+  function sgk(o){return o.d.ctry+'|'+(o.board==='UAI'?'AI':o.board)+'|'+o.dep.getFullYear()+'-'+o.dep.getMonth()+'|'+o.hotel.stars;}
+  var SG={};ALLP.forEach(function(o){(SG[sgk(o)]=SG[sgk(o)]||[]).push(o.ppn);});
+  function daysTo(o){return (o.dep-TODAY)/864e5;}
+  function hk(o){return o.d.k+'|'+o.hotel.name;}
+  function rate(o){return o.hotel.rating?String(o.hotel.rating).replace('.',','):'';}
+  function place(o){return o.d.ctry===o.d.city||!o.d.city?o.d.ctry:o.d.city+', '+o.d.ctry;}
+  // fakta, proč nabídka stojí za to (bez jmenování konkurence)
+  function facts(o){
+    if(o._f) return o._f;
+    var f=[];
+    if(o.anom&&o.anom.kind!=='cheap') f.push(o.anom.txt);
+    var g=SG[sgk(o)];
+    if(g&&g.length>=8){var m=median(g),p=Math.round((m-o.ppn)/m*100);if(p>=10){o._under=p;f.push('O '+p+' % levnější než jiné '+o.hotel.stars+'★ '+(BOARD[o.board]||'zájezdy')+' ('+o.d.ctry+', '+MONTHS_FULL[o.dep.getMonth()]+').');}}
+    var sib=byHotel[hk(o)]||[];
+    if(sib.length>=3&&o.ppp<=Math.min.apply(null,sib.map(function(x){return x.ppp}))) f.push('Nejlevnější z '+sib.length+' termínů tohoto hotelu.');
+    if(o.hotel.rating>=8.5&&(!o.hotel.reviews||o.hotel.reviews>=25)) f.push('Hosté dávají '+rate(o)+'/10'+(o.hotel.reviews?' ('+o.hotel.reviews.toLocaleString('cs-CZ')+' hodnocení)':'')+'.');
+    if(o.disc>=10) f.push('Cestovka sama zlevnila o '+o.disc+' %.');
+    if(!f.length&&o.d.hint) f.push(o.d.hint);
+    return o._f=f;
   }
-  anim($('sNew'),DEMO?newC:treasC); anim($('sDrop'),DEMO||dropC?dropC:discC); $('bellN').textContent=newC; $('badge').textContent=newC;
+  // malý graf: ceny termínů téhož hotelu (stejné letiště a délka), aktuální oranžově
+  function mini(o){
+    var sib=(byHotel[hk(o)]||[]).filter(function(x){return x.air===o.air&&Math.abs(x.n-o.n)<=1});
+    var dd={};sib.forEach(function(x){var k=+x.dep;if(!dd[k]||x.ppp<dd[k].ppp)dd[k]=x;});
+    var l=Object.keys(dd).sort(function(a,b){return a-b}).map(function(k){return dd[k]}).slice(0,12);
+    if(l.length<2) return '';
+    var mx=Math.max.apply(null,l.map(function(x){return x.ppp})),mn=Math.min.apply(null,l.map(function(x){return x.ppp})),w=7,gap=3;
+    return '<svg class="mbar" viewBox="0 0 '+(l.length*(w+gap))+' 30" aria-hidden="true">'+l.map(function(x,i){var h=6+((x.ppp-mn)/((mx-mn)||1))*22;return '<rect x="'+i*(w+gap)+'" y="'+(30-h)+'" width="'+w+'" height="'+h+'" rx="1.5" fill="'+(+x.dep===+o.dep?'var(--orange)':'var(--line)')+'"/>';}).join('')+'</svg><small class="mcap">'+l.length+' termínů</small>';
+  }
+  // velký graf: nejlevnější zájezd do země podle týdne odletu
+  function weekChart(o){
+    var st=new Date(TODAY);st.setDate(st.getDate()-((st.getDay()+6)%7));
+    var cw=Math.floor((o.dep-st)/(7*864e5)), W=Math.max(12,Math.min(26,cw+5)), m=[];for(var i=0;i<W;i++)m.push(null);
+    ALLP.forEach(function(x){if(x.d.ctry!==o.d.ctry||Math.abs(x.n-o.n)>2)return;var w=Math.floor((x.dep-st)/(7*864e5));if(w<0||w>=W)return;if(m[w]==null||x.ppp<m[w].ppp)m[w]=x;});
+    var vals=m.filter(Boolean).map(function(x){return x.ppp});if(vals.length<4)return '';
+    var mx=Math.max.apply(null,vals),mn=Math.min.apply(null,vals),bw=100/W;
+    var bars=m.map(function(x,i){if(!x)return '<rect x="'+(i*bw+bw*.2)+'" y="78" width="'+(bw*.6)+'" height="2" fill="var(--line)"/>';var h=12+(x.ppp-mn)/((mx-mn)||1)*62,cur=i===cw;return '<rect class="wb" data-open="'+x.id+'" x="'+(i*bw+bw*.15)+'" y="'+(80-h)+'" width="'+(bw*.7)+'" height="'+h+'" rx=".8" fill="'+(cur?'var(--orange)':'color-mix(in srgb,var(--ink) 18%,transparent)')+'"><title>'+ds(x.dep)+': '+kc(x.ppp)+'</title></rect>';}).join('');
+    var lab='';for(var j=0;j<W;j+=4){var d=addD(st,j*7);lab+='<span style="left:'+(j*bw)+'%">'+d.getDate()+'. '+(d.getMonth()+1)+'.</span>';}
+    var best=m.filter(Boolean).sort(function(a,b){return a.ppp-b.ppp})[0];
+    var cap=m[cw]&&m[cw].ppp<=best.ppp?'Nejlevnější týden v příštích '+W+' týdnech.':'Levněji vychází týden od '+ds(best.dep)+' ('+kc(best.ppp)+'), klikni na sloupec.';
+    return '<div class="wk"><div class="wk-h mono">'+esc(o.d.ctry).toUpperCase()+' · '+nights(o.n).toUpperCase()+' · NEJNIŽŠÍ CENA PODLE TÝDNE ODLETU</div><svg viewBox="0 0 100 80" preserveAspectRatio="none" class="wk-s" role="img" aria-label="Ceny podle týdne odletu">'+bars+'</svg><div class="wk-x mono">'+lab+'</div><div class="wk-c">'+cap+'</div></div>';
+  }
+  function trow(o,i){
+    var f=facts(o);
+    return '<article class="tr" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(place(o)+', '+kc(o.ppp))+'">'+
+      '<div class="tn mono">'+(i==null?'':pad(i+1))+'</div>'+
+      '<div class="tb"><div class="tt">'+esc(place(o))+'</div>'+
+      '<div class="th">'+esc(o.hotel.name)+' <span class="st">'+'★'.repeat(o.hotel.stars)+'</span>'+(o.hotel.rating?' <span class="rt">'+rate(o)+'</span>':'')+'</div>'+
+      '<div class="tf mono">'+[AIR_FROM[o.air]||o.air,dc(o.dep)+'–'+dc(o.ret),nights(o.n),BOARD[o.board]||''].filter(Boolean).join(' · ')+'</div>'+
+      (f.length?'<ul class="tw">'+f.slice(0,1).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+'</div>'+
+      '<div class="tp"><div class="p num">'+kc(o.ppp)+'</div><small>'+kc(o.ppn)+' / noc</small>'+mini(o)+'</div></article>';
+  }
 
-  // výpis s filtry a záložkami
-  var TABS=[['all','Všechny nabídky'],['poklady','Poklady'],['lm','Last minute'],['nove','Nové'],['letenky','Letenky'],['sleva','Zlevněné'],['fm','First minute'],['lux','Pro náročné']];
-  var S={tab:'all',q:'',month:'all',max:0,board:'',air:'',sort:'idx',beach:false,rating:false,stars:false,dest:null,savedOnly:false,tag:null,tagName:''};
+  // ---------------------------------------------------------- dnešní tucet
+  var cand=P.filter(function(o){var d=daysTo(o);return d>=2&&d<=210&&o.ppp>3000;});
+  cand.forEach(function(o){var f=facts(o);o._s=o.idx+Math.min(12,f.length*3)+(o._under?Math.min(10,o._under/3):0)+(o.hotel.img?2:0);});
+  cand.sort(function(a,b){return b._s-a._s||a.ppp-b.ppp;});
+  var TUC=[],cc={},ck={};
+  cand.forEach(function(o){if(TUC.length>=12)return;var c=o.d.ctry,k=o.d.k+'|'+o.d.city;if((cc[c]||0)>=2||ck[k])return;cc[c]=(cc[c]||0)+1;ck[k]=1;TUC.push(o);});
+  var hi=TUC.findIndex(function(o){return o.hotel.img&&daysTo(o)<=120&&weekChart(o).indexOf('Nejlevnější týden')>0});if(hi<0)hi=TUC.findIndex(function(o){return o.hotel.img&&daysTo(o)<=120&&weekChart(o)}); if(hi>0) TUC.unshift(TUC.splice(hi,1)[0]);
+  var H=TUC[0];
+  var sl=DATA?new Date(DATA.gen):new Date();
+  var terms=MAIN.length, hotels=P.length;
+  if(H){
+    var hf=facts(H);
+    $('dnes').innerHTML=
+      '<div class="ed mono"><span>VÝBĚR '+['NE','PO','ÚT','ST','ČT','PÁ','SO'][sl.getDay()]+' '+sl.getDate()+'. '+(sl.getMonth()+1)+'. · '+pad(sl.getHours())+':'+pad(sl.getMinutes())+'</span><span>'+terms.toLocaleString('cs-CZ')+' termínů → 12</span><span>další za <b data-cd>--:--:--</b></span></div>'+
+      '<h1>Dnešní tucet</h1><p class="lead">Ze všech zájezdů, které cestovky právě prodávají, vybereme dvanáct, které za svou cenu opravdu stojí. U každého napíšeme proč. Každé dvě hodiny nový výběr.</p>'+
+      '<article class="hero" data-open="'+H.id+'" tabindex="0"><div class="hpic">'+pic(H,240)+'<span class="hlab mono">01 · POMERANČ DNE</span></div>'+
+      '<div class="hb"><div class="tt">'+esc(place(H))+'</div><div class="th">'+esc(H.hotel.name)+' <span class="st">'+'★'.repeat(H.hotel.stars)+'</span>'+(H.hotel.rating?' <span class="rt">'+rate(H)+'</span>':'')+'</div>'+
+      '<div class="hk mono"><div><small>ODLET</small>'+(AIR[H.air]||H.air)+'</div><div><small>TERMÍN</small>'+dc(H.dep)+'–'+dc(H.ret)+'</div><div><small>DÉLKA</small>'+nights(H.n)+'</div><div><small>STRAVA</small>'+(BOARD[H.board]||'–')+'</div></div>'+
+      '<div class="hp"><div class="p num">'+kc(H.ppp)+'</div><small>za osobu · '+kc(H.ppn)+' za noc</small></div>'+
+      (hf.length?'<ul class="tw">'+hf.slice(0,3).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+
+      weekChart(H)+'</div></article>'+
+      '<div class="tl">'+TUC.slice(1).map(function(o,i){return trow(o,i+1);}).join('')+'</div>'+
+      '<div class="tend"><b>To je celý dnešní tucet.</b> Nový výběr za <span class="mono" data-cd>--:--:--</span>. <span class="tend-b"><button type="button" class="btn or" data-install>📲 Mít ho na ploše</button><a class="btn ghost" href="#ranni">☀ Posílat ráno</a></span></div>';
+  }
+
+  // ---------------------------------------------------------- kam to bude
+  var REL={
+    'Maledivy':['Mauricius','Seychely','Zanzibar','Srí Lanka'],'Mauricius':['Maledivy','Seychely','Zanzibar'],'Seychely':['Maledivy','Mauricius','Zanzibar'],
+    'Zanzibar':['Mauricius','Maledivy','Kapverdské ostrovy'],'Spojené arabské emiráty':['Omán','Egypt','Maledivy'],'Omán':['Spojené arabské emiráty','Egypt'],
+    'Egypt':['Spojené arabské emiráty','Kanárské ostrovy','Kapverdské ostrovy'],'Thajsko':['Srí Lanka','Indonésie','Maledivy'],'Srí Lanka':['Thajsko','Maledivy','Indonésie'],
+    'Indonésie':['Thajsko','Srí Lanka'],'Kanárské ostrovy':['Kapverdské ostrovy','Portugalsko','Egypt'],'Kapverdské ostrovy':['Kanárské ostrovy','Zanzibar'],
+    'Řecko':['Kypr','Turecko','Albánie'],'Kypr':['Řecko','Turecko'],'Turecko':['Řecko','Kypr','Bulharsko'],'Bulharsko':['Turecko','Albánie','Řecko'],
+    'Tunisko':['Egypt','Turecko'],'Dominikánská republika':['Mexiko','Kuba'],'Mexiko':['Dominikánská republika','Kuba'],'Kuba':['Mexiko','Dominikánská republika'],
+    'Itálie':['Španělsko','Řecko'],'Španělsko':['Portugalsko','Itálie','Kanárské ostrovy'],'Portugalsko':['Španělsko','Kanárské ostrovy']
+  };
+  var NICK={'Spojené arabské emiráty':'Dubaj a Emiráty','Kapverdské ostrovy':'Kapverdy','Dominikánská republika':'Dominikána'};
+  function nick(c){return NICK[c]||c;}
+  var CM={};P.forEach(function(o){var c=o.d.ctry;if(!CM[c])CM[c]={n:0,min:Infinity};CM[c].n++;if(o.ppp<CM[c].min)CM[c].min=o.ppp;});
+  var KCH=['Spojené arabské emiráty','Egypt','Maledivy','Kanárské ostrovy','Thajsko','Zanzibar','Řecko','Turecko','Dominikánská republika','Mauricius','Kypr','Mexiko','Srí Lanka','Kuba','Bulharsko','Itálie','Španělsko','Omán','Seychely','Tunisko'].filter(function(c){return CM[c]&&CM[c].n>=3;});
+  $('kchips').innerHTML=KCH.map(function(c){return '<button type="button" data-k="'+esc(c)+'"><b>'+esc(nick(c))+'</b><span class="mono">od '+kc(CM[c].min)+'</span></button>';}).join('');
+  var KQ=null;
+  function kam(q,scroll){
+    var n=norm(q.trim());KQ=q;
+    if(!n){$('kout').innerHTML='';return;}
+    var hit=P.filter(function(o){return norm(o.d.city+' '+o.d.ctry+' '+nick(o.d.ctry)+' '+o.hotel.name).indexOf(n)>=0;});
+    var fl=ITEMS.filter(function(o){return o.type==='flight'&&!o.cls&&norm(o.d.city+' '+o.d.ctry+' '+nick(o.d.ctry)).indexOf(n)>=0;}).sort(function(a,b){return a.ppp-b.ppp});
+    if(n==='dubaj'||n==='emiraty'||n==='sae') {hit=P.filter(function(o){return o.d.ctry==='Spojené arabské emiráty';});fl=ITEMS.filter(function(o){return o.type==='flight'&&!o.cls&&o.d.ctry==='Spojené arabské emiráty'}).sort(function(a,b){return a.ppp-b.ppp});}
+    if(!hit.length&&!fl.length){$('kout').innerHTML='<p class="kno">Na „'+esc(q)+'“ teď nic nemáme. Zkus zemi nebo ostrov, třeba Kréta nebo Maledivy.</p>';return;}
+    var cnt={};hit.forEach(function(o){cnt[o.d.ctry]=(cnt[o.d.ctry]||0)+1;});var main=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]})[0]||(fl[0]&&fl[0].d.ctry);
+    var all=ALLP.filter(function(o){return hit.indexOf(o)>=0||(main&&o.d.ctry===main&&norm(o.d.city+' '+o.d.ctry+' '+nick(o.d.ctry)+' '+o.hotel.name).indexOf(n)>=0);});
+    var mons={};all.forEach(function(o){var m=o.dep.getMonth();if(!mons[m]||o.ppp<mons[m])mons[m]=o.ppp;});var bm=Object.keys(mons).sort(function(a,b){return mons[a]-mons[b]})[0];
+    var top=hit.slice().sort(function(a,b){facts(a);facts(b);return (b.idx+(b._under||0)/3)-(a.idx+(a._under||0)/3)}).slice(0,5);
+    var h='<div class="ksum"><b>'+esc(main?nick(main):q)+'</b><span class="mono">'+hit.length+' hotelů'+(hit.length?' · od '+kc(Math.min.apply(null,hit.map(function(o){return o.ppp}))):'')+(bm!=null?' · nejlevněji v '+['lednu','únoru','březnu','dubnu','květnu','červnu','červenci','srpnu','září','říjnu','listopadu','prosinci'][bm]:'')+'</span></div>';
+    h+=top.map(function(o){return trow(o,null);}).join('');
+    if(fl.length) h+='<div class="kfl" data-open="'+fl[0].id+'" tabindex="0"><span class="mono">✈ JEN LETENKA</span><b>'+esc((AIR[fl[0].air]||fl[0].air)+' → '+fl[0].d.city)+'</b><span>'+ds(fl[0].dep)+' – '+ds(fl[0].ret)+(fl[0].direct?' · přímý':' · s přestupem')+'</span><b class="num">'+kc(fl[0].ppp)+'</b></div>';
+    var rel=(REL[main]||[]).filter(function(c){return CM[c];});
+    if(rel.length) h+='<div class="krel"><span>Kdo hledá '+esc(nick(main))+', kouká i na:</span>'+rel.map(function(c){return '<button type="button" data-k="'+esc(c)+'">'+esc(nick(c))+' <span class="mono">od '+kc(CM[c].min)+'</span></button>';}).join('')+'</div>';
+    if(hit.length>5) h+='<button type="button" class="btn ghost kall" data-kall="'+esc(q)+'">Všech '+hit.length+' hotelů →</button>';
+    $('kout').innerHTML=h;
+    if(scroll) $('kam').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});
+  }
+  $('kgo').addEventListener('click',function(){kam($('kq').value);$('kq').blur();});
+  $('kq').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();kam(this.value);this.blur();}});
+  $('kq').addEventListener('search',function(){kam(this.value);});
+  $('kam').addEventListener('click',function(e){
+    var b=e.target.closest('[data-k]');if(b){var c=b.getAttribute('data-k');$('kq').value=nick(c);kam(c);if(e.target.closest('.krel'))$('kq').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});return;}
+    var a=e.target.closest('[data-kall]');if(a){window.__showFn(function(o){return norm(o.d.city+' '+o.d.ctry+' '+nick(o.d.ctry)+' '+(o.hotel?o.hotel.name:'')).indexOf(norm(a.getAttribute('data-kall')))>=0;},a.getAttribute('data-kall'));}
+  });
+
+  // ---------------------------------------------------------- chytáky
+  var KIND={drop:['▼','Cena spadla'],air:['⇄','Jiné letiště, stejný hotel'],nights:['＋','Víc nocí za méně peněz'],board:['◎','All inclusive skoro zadarmo']};
+  var chy=[],usedH={};
+  ['nights','air','board','drop'].forEach(function(k){ITEMS.filter(function(o){return o.anom&&o.anom.kind===k&&o.hotel&&daysTo(o)>=2}).sort(function(a,b){return b.anom.s-a.anom.s}).forEach(function(o){if(chy.filter(function(x){return x.anom.kind===k}).length>=2||usedH[hk(o)])return;usedH[hk(o)]=1;chy.push(o);});});
+  if(chy.length>=2) $('chytaky').innerHTML='<div class="wrap"><div class="eyebrow">Chytáky</div><h2>Co jsme dnes našli v cenících</h2><p class="lead">Malé nelogičnosti, na které člověk při běžném hledání nenarazí. Stejný hotel, jiný kousek ceníku, a rozdíl jsou tisíce.</p><div class="cg">'+
+    chy.map(function(o){var k=KIND[o.anom.kind];return '<button type="button" class="cy" data-open="'+o.id+'"><span class="ci">'+k[0]+'</span><span class="ck mono">'+k[1].toUpperCase()+'</span><b>'+esc(o.anom.txt)+'</b><span class="cm">'+esc(place(o))+' · '+esc(o.hotel.name)+'<br><span class="mono">'+(AIR_FROM[o.air]||'')+' · '+dc(o.dep)+' · '+nights(o.n)+'</span></span><span class="cp num">'+kc(o.ppp)+'</span></button>';}).join('')+'</div></div>';
+  else $('chytaky').hidden=true;
+
+  // ---------------------------------------------------------- podle nálady
+  var MOOD=[
+    ['🎄','Vánoce a Silvestr',function(o){return o.tags.indexOf('xmas')>=0}],
+    ['🎒','Jarní prázdniny',function(o){return o.tags.indexOf('spring')>=0}],
+    ['🌴','Exotika do 40 tisíc',function(o){return /Maledivy|Zanzibar|Thajsko|Mauricius|Seychely|Dominik|Mexiko|Kuba|Srí|Indon|Kapverd/.test(o.d.ctry)&&o.ppp<=40000}],
+    ['💸','Týden do 15 000 Kč',function(o){return o.ppp<=15000&&o.n>=6}],
+    ['🍹','All inclusive',function(o){return o.board==='AI'||o.board==='UAI'}],
+    ['⚡','Prodloužený víkend',function(o){return o.n>=3&&o.n<=5&&daysTo(o)<62}],
+    ['⭐','Hosté hodnotí 9+',function(o){return o.hotel&&o.hotel.rating>=9}],
+    ['◆','Pro náročné',function(o){return o.tags.indexOf('lux')>=0}],
+    ['☀','Léto 2027',function(o){return o.dep>=D0(2027,6,1)&&o.dep<D0(2027,9,1)}],
+    ['✈','Z Ostravy',function(o){return o.air==='OSR'}],['✈','Z Brna',function(o){return o.air==='BRQ'}],['✈','Z Vídně',function(o){return o.air==='VIE'}],['✈','Z Katovic',function(o){return o.air==='KTW'}]
+  ].map(function(m){m[3]=P.filter(m[2]).length;return m;}).filter(function(m){return m[3]>=3;});
+  $('nchips').innerHTML=MOOD.map(function(m,i){return '<button type="button" data-m="'+i+'"><span aria-hidden="true">'+m[0]+'</span> '+esc(m[1])+' <small class="mono">'+m[3]+'</small></button>';}).join('')+'<button type="button" class="dice" data-m="roll">🎲 Hoď mě někam</button>';
+  $('nchips').addEventListener('click',function(e){var b=e.target.closest('[data-m]');if(!b)return;var i=b.getAttribute('data-m');
+    if(i==='roll'){var pool=cand.filter(function(o){return o.idx>=60});if(pool.length)openOffer(pool[Math.floor(Math.random()*pool.length)].id);return;}
+    window.__showFn(MOOD[i][2],MOOD[i][1]);});
+
+  // ---------------------------------------------------------- celý výpis (filtry) – až na konci
+  var TABS=[['all','Všechno'],['poklady','Poklady'],['lm','Last minute'],['nove','Nové'],['sleva','Zlevněné'],['fm','First minute'],['lux','Pro náročné']];
+  var S={tab:'all',q:'',month:'all',max:0,board:'',air:'',sort:'idx',beach:false,rating:false,stars:false,dest:null,savedOnly:false,tag:null,tagName:'',fn:null};
   var shown=10;
+  $('vAll').textContent=hotels.toLocaleString('cs-CZ');
   var months={}; MAIN.forEach(function(o){months[o.dep.getFullYear()*12+o.dep.getMonth()]=1;});
   $('fMonth').innerHTML='<option value="all">Termín</option>'+Object.keys(months).sort(function(a,b){return a-b}).map(function(k){return '<option value="'+k+'">'+MONTHS_FULL[k%12]+' '+Math.floor(k/12)+'</option>';}).join('');
-  function inTab(o,t){switch(t){case 'poklady':return isTreasure(o);case 'lm':return o.type!=='flight'&&o.dep-TODAY<21*864e5;case 'nove':return o.isNew||o.age<24;case 'letenky':return o.type==='flight';case 'sleva':return o.dropPct>=.06||o.disc>=10;case 'fm':return o.dep>=D0(2027,5,1);case 'lux':return o.tags.indexOf('lux')>=0;}return o.tags.indexOf('lux')<0||S.q||S.dest;}
+  function inTab(o,t){switch(t){case 'poklady':return isTreasure(o);case 'lm':return o.type!=='flight'&&o.dep-TODAY<21*864e5;case 'nove':return o.isNew||o.age<24;case 'sleva':return o.dropPct>=.06||o.disc>=10;case 'fm':return o.dep>=D0(2027,5,1);case 'lux':return o.tags.indexOf('lux')>=0;}return o.type!=='flight';}
   function base(){
     var q=norm(S.q); var src=S.tag?withTag(S.tag):MAIN;
     return src.filter(function(o){
       if(S.savedOnly) return isSaved(o.id);
+      if(S.fn&&!S.fn(o)) return false;
       if(q&&norm(o.d.city+' '+o.d.ctry+' '+(o.hotel?o.hotel.name:'')+' '+(AIR[o.air]||'')).indexOf(q)<0) return false;
       if(S.month!=='all'&&(o.dep.getFullYear()*12+o.dep.getMonth())!=S.month) return false;
       if(S.max&&o.ppp>S.max) return false;
-      if(S.board==='flight'&&o.type!=='flight') return false;
-      if(S.board==='hotel'&&o.type!=='hotel') return false;
       if(S.board&&['AI','HB','BB'].indexOf(S.board)>=0&&(!o.board||o.type==='flight'||(S.board==='AI'?(o.board!=='AI'&&o.board!=='UAI'):o.board!==S.board))) return false;
       if(S.air&&o.air!==S.air) return false;
-      if(S.dest&&o.d.k!==S.dest) return false;
       if(S.beach&&(!o.hotel||o.hotel.beach==null||o.hotel.beach>100)) return false;
       if(S.rating&&(!o.hotel||o.hotel.rating<8.5)) return false;
       if(S.stars&&(!o.hotel||o.hotel.stars<5)) return false;
@@ -677,122 +814,34 @@ function home(){
     if(S.sort==='idx'&&!S.savedOnly){
       if(S.tab==='lm') l.sort(function(a,c){return a.dep-c.dep||c.idx-a.idx;});
       else if(S.tab==='sleva') l.sort(function(a,c){return Math.max(c.disc||0,c.dropPct*100)-Math.max(a.disc||0,a.dropPct*100)||c.idx-a.idx;});
-      else if(S.tab==='poklady') l.sort(function(a,c){return c.idx-a.idx||a.ppn-c.ppn;});
-      else if(S.tab==='lux') l.sort(function(a,c){return c.hotel&&a.hotel?(c.hotel.rating||0)-(a.hotel.rating||0)||c.ppp-a.ppp:0;});
       else if(S.tab==='fm') l.sort(function(a,c){return a.ppn-c.ppn;});
-      if(!S.q&&!S.dest&&S.tab!=='lm') l=mix(l);
+      if(!S.q&&!S.fn&&S.tab!=='lm') l=mix(l);
     }
-    var NOTE={all:'Nejlepší nabídky napříč destinacemi, seřazené podle Pomeranč indexu.',poklady:'Poklady: index 88 a víc nebo výrazný pokles ceny. Nejvýhodnější nahoře.',lm:'Odlet do 3 týdnů. Seřazeno od nejbližšího odletu.',sleva:'Nejvyšší slevy nahoře – sleva u cestovky nebo pokles ceny u nás.',fm:'Léto a podzim 2027. Seřazeno od nejnižší ceny za noc.',lux:'Pětihvězdičkové hotely a exotika, nejlépe hodnocené nahoře.',nove:'Nové nabídky za posledních 24 hodin.'};
-    var chip=S.savedOnly?'Uložené nabídky':S.tag?S.tagName:S.dest?'Jen '+DEST[S.dest].city:'';
-    $('list').innerHTML=(!chip&&!S.q&&NOTE[S.tab]&&S.sort==='idx'?'<p class="mono" style="font-size:12px;color:var(--mute);margin:12px 0 0">'+NOTE[S.tab]+'</p>':'')+(chip?'<p class="mono" style="font-size:12px;color:var(--mute);margin:12px 0 0">'+esc(chip)+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zpět na celý výpis</button></p>':'')+
+    if(!S.savedOnly){var sn={};l=l.filter(function(o){var k=o.hotel?hk(o):'x'+o.id;if(sn[k])return false;sn[k]=1;return true;});}
+    var chip=S.savedOnly?'Uložené nabídky':S.tagName||'';
+    $('list').innerHTML=(chip?'<p class="vchip mono">'+esc(chip)+' · '+l.length+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zrušit</button></p>':'')+
       (l.length?l.slice(0,shown).map(row).join(''):'<div class="empty">'+(S.savedOnly?'Zatím nic uloženého. Klikni na ♥ u nabídky.':'Na tenhle výběr teď nic nemáme. Zkus jiný termín nebo vyšší rozpočet.')+'</div>');
     $('moreBtn').hidden=l.length<=shown;
     $('ddMonth').classList.toggle('on',S.month!=='all');$('ddMax').classList.toggle('on',!!S.max);$('ddBoard').classList.toggle('on',!!S.board);$('ddAir').classList.toggle('on',!!S.air);
   }
   function toList(){$('vypis').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});}
+  window.__showFn=function(fn,name){S.fn=fn;S.tagName=name;S.tag=null;S.tab='all';S.savedOnly=false;S.q='';$('q').value='';shown=10;render();toList();};
+  window.__showTag=function(tag,name){S.tag=tag;S.tagName=name;S.fn=null;S.tab='all';S.savedOnly=false;shown=10;render();toList();};
   $('tabs').addEventListener('click',function(e){var b=e.target.closest('[data-tab]');if(!b)return;S.tab=b.getAttribute('data-tab');S.savedOnly=false;shown=10;render();});
-  $('list').addEventListener('click',function(e){if(e.target.closest('[data-act="clear"]')){S.savedOnly=false;S.tag=null;S.dest=null;render();}});
+  $('list').addEventListener('click',function(e){if(e.target.closest('[data-act="clear"]')){S.savedOnly=false;S.tag=null;S.fn=null;S.tagName='';render();}});
   $('q').addEventListener('input',function(e){S.q=e.target.value;shown=10;render();});
-  function doSearch(){S.q=$('q').value;S.tab='all';S.savedOnly=false;S.tag=null;S.dest=null;shown=10;render();$('q').blur();toList();
-    var n=base().filter(function(o){return inTab(o,'all')}).length;toast(S.q?(n?'Nalezeno '+n+' nabídek':'Nic jsme nenašli, zkus jiné slovo'):'Celý výpis');}
-  $('q').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();doSearch();}});
-  $('q').addEventListener('search',doSearch);
-  var sb=$('q').closest('.sbox'); if(sb&&!document.getElementById('qGo')){var bt=document.createElement('button');bt.type='button';bt.id='qGo';bt.className='btn or';bt.textContent='Hledat';bt.style.cssText='padding:6px 14px;margin-left:6px;border-radius:999px;font-size:14px';bt.addEventListener('click',doSearch);sb.appendChild(bt);}
-  // našeptávač destinací
-  var dl=document.createElement('datalist');dl.id='qList';var seen={};MAIN.forEach(function(o){[o.d.ctry,o.d.city].forEach(function(x){if(x&&!seen[x]){seen[x]=1;dl.appendChild(new Option(x));}});});document.body.appendChild(dl);$('q').setAttribute('list','qList');
-  document.addEventListener('click',function(e){var a=e.target.closest('.stat[data-act]');if(!a)return;S.tab=a.getAttribute('data-act');S.savedOnly=false;S.tag=null;shown=10;render();toList();});
+  var dl=document.createElement('datalist');dl.id='qList';var seen={};MAIN.forEach(function(o){[nick(o.d.ctry),o.d.city].forEach(function(x){if(x&&!seen[x]){seen[x]=1;dl.appendChild(new Option(x));}});});document.body.appendChild(dl);$('q').setAttribute('list','qList');$('kq').setAttribute('list','qList');
   [['fMonth','month',String],['fMax','max',Number],['fBoard','board',String],['fAir','air',String],['fSort','sort',String]].forEach(function(f){$(f[0]).addEventListener('change',function(e){S[f[1]]=f[2](e.target.value);shown=10;render();});});
   $('fPax').addEventListener('change',function(){toast('Ceny jsou za osobu; celkovou cenu uvidíš v detailu');});
   [['fBeach','beach'],['fRating','rating'],['fStars','stars']].forEach(function(f){$(f[0]).addEventListener('change',function(e){S[f[1]]=e.target.checked;shown=10;render();});});
   $('advBtn').addEventListener('click',function(){var on=!$('adv').classList.contains('on');$('adv').classList.toggle('on',on);this.setAttribute('aria-pressed',on);});
-  $('reset').addEventListener('click',function(){S.tab='all';S.q='';S.month='all';S.max=0;S.board='';S.air='';S.sort='idx';S.beach=S.rating=S.stars=false;S.dest=null;S.tag=null;S.savedOnly=false;$('q').value='';$('fMonth').value='all';$('fMax').value='0';$('fBoard').value='';$('fAir').value='';$('fSort').value='idx';['fBeach','fRating','fStars'].forEach(function(i){$(i).checked=false});shown=10;render();});
+  $('reset').addEventListener('click',function(){S.tab='all';S.q='';S.month='all';S.max=0;S.board='';S.air='';S.sort='idx';S.beach=S.rating=S.stars=false;S.dest=null;S.tag=null;S.fn=null;S.tagName='';S.savedOnly=false;$('q').value='';$('fMonth').value='all';$('fMax').value='0';$('fBoard').value='';$('fAir').value='';$('fSort').value='idx';['fBeach','fRating','fStars'].forEach(function(i){$(i).checked=false});shown=10;render();});
   $('moreBtn').addEventListener('click',function(){shown+=10;render();});
-  $('bellBtn').addEventListener('click',function(){S.tab='nove';S.savedOnly=false;render();toList();});
+  var newC=MAIN.filter(function(o){return o.isNew}).length; $('bellN').textContent=newC>99?'99+':newC; if($('badge'))$('badge').textContent=newC||12;
+  $('bellBtn').addEventListener('click',function(){S.tab='nove';S.savedOnly=false;S.fn=null;S.tagName='';render();toList();});
   render();
-  window.__showTag=function(tag,name){S.tag=tag;S.tagName=name;S.tab='all';S.dest=null;S.savedOnly=false;shown=10;render();toList();};
 
-  // boční panel
-  var CATCH=MAIN.filter(function(o){return o.anom&&o.type==='package'&&o.dep-TODAY<75*864e5}).sort(function(a,b){return b.idx-a.idx})[0]||MAIN[0];
-  $('catchIdx').textContent='Pomeranč index '+CATCH.idx; $('catch').setAttribute('data-open',CATCH.id);
-  $('catch').innerHTML='<div style="height:150px;border-radius:12px;overflow:hidden">'+pic(CATCH,150)+'</div><div class="dest">'+esc(CATCH.d.city)+'</div><div class="sub">'+esc(CATCH.d.ctry)+' · '+esc(CATCH.hotel.name)+' '+'★'.repeat(CATCH.hotel.stars)+'</div><div class="meta"><span><svg class="i"><use href="#i-plane"/></svg>'+AIR[CATCH.air]+'</span><span><svg class="i"><use href="#i-cal"/></svg>'+dc(CATCH.dep)+'–'+dc(CATCH.ret)+'</span><span>'+nights(CATCH.n)+' · '+BOARD[CATCH.board]+'</span></div><div class="p">'+kc(CATCH.ppp)+' <span style="font-family:var(--body);font-size:13px;color:var(--mute);font-weight:600;letter-spacing:0">/ osoba</span></div><div class="why">„'+esc(why(CATCH))+'“</div>';
-  $('miniRows').innerHTML=diverse(MAIN.slice().sort(function(a,b){return b.idx-a.idx}).filter(function(o){return o.type!=='hotel'}),8,1).map(function(o){return '<div class="mrow" data-open="'+o.id+'" tabindex="0"><span>'+pad(o.dep.getDate())+'.'+pad(o.dep.getMonth()+1)+'</span><span>'+o.air+'</span><span class="c">'+esc(o.d.city.toUpperCase())+(o.type==='flight'?' ✈':'')+'</span><b>'+Math.round(o.ppp).toLocaleString('cs-CZ')+'</b></div>';}).join('');
-  var kinds={drop:'Pokles ceny',air:'Jiné letiště',nights:'Víc nocí za míň',board:'Strava navíc skoro zdarma',cheap:'Letenka pod běžnou cenou'};
-  var an=[];['drop','air','nights','board','cheap'].forEach(function(k){var x=ITEMS.filter(function(o){return o.anom&&o.anom.kind===k}).sort(function(a,b){return b.anom.s-a.anom.s})[0];if(x)an.push(x);});
-  $('anoms').innerHTML=an.map(function(o){return '<button type="button" class="anom" data-open="'+o.id+'"><div class="t">'+kinds[o.anom.kind]+'</div><div class="q">'+esc(o.anom.txt)+'</div><div class="m">'+esc(title(o))+' · '+ds(o.dep)+' · '+kc(o.ppp)+'</div></button>';}).join('');
-
-  // tematické pruhy
-  function rail(list){return '<div class="rail">'+list.map(tile).join('')+'</div>';}
-  function shelf(id,eyebrow,h2,p,list,tag,extra){
-    if(!list.length) return '';
-    return '<section class="wrap shelf" id="'+id+'" aria-labelledby="'+id+'-h"><div class="shelf-h"><div><div class="eyebrow">'+eyebrow+'</div><h2 id="'+id+'-h">'+h2+'</h2>'+(p?'<p>'+p+'</p>':'')+'</div>'+(tag?'<button type="button" class="all" data-act="tag" data-tag="'+tag+'" data-name="'+esc(h2)+'">Zobrazit vše ('+withTag(tag).length+') →</button>':'')+'</div>'+(extra||'')+rail(list)+'</section>';
-  }
-  var top=function(tag,n){return bestOf(withTag(tag)).sort(function(a,b){return b.idx-a.idx}).slice(0,n||12);};
-  var html='';
-  html+='<div id="lp-slot"></div>';
-  html+=shelf('vanoce','Vánoce a Silvestr 2026','Ještě volné mezi Vánoci a Novým rokem','Odlety od 19. 12. do 1. 1. Tyhle termíny mizí jako první, ceny jsou o třetinu vyšší než v listopadu, proto ukazujeme jen ty, které za to stojí.',top('xmas'),'xmas');
-  // jarní prázdniny
-  if(withTag('spring').length) html+='<section class="wrap shelf" id="jarni" aria-labelledby="jarni-h"><div class="shelf-h"><div><div class="eyebrow">Jarní prázdniny 2027</div><h2 id="jarni-h">Jarní prázdniny: vyber svůj okres</h2><p>Termíny podle MŠMT, rozhoduje okres školy. Odlet je vždy v sobotu před prázdninami, aby děti nepřišly o školu.</p></div><button type="button" class="all" data-act="tag" data-tag="spring" data-name="Jarní prázdniny 2027">Všech '+bestOf(withTag('spring')).length+' nabídek →</button></div>'+
-    '<div class="district"><label for="okres">Náš okres:</label><input id="okres" type="search" list="okresy" placeholder="např. Frýdek-Místek" autocomplete="off"><datalist id="okresy">'+SPRING.map(function(s){return s.okresy.split(', ').map(function(x){return '<option value="'+esc(x)+'">';}).join('');}).join('')+'</datalist><span class="mono" id="okresHit" style="font-size:12px;color:var(--mute)"></span></div>'+
-    '<div class="weeks" id="weeks">'+SPRING.map(function(s,i){return '<button type="button" data-act="week" data-w="'+s.w+'" aria-pressed="'+(i===4)+'"><b>'+ds(s.from)+' – '+ds(s.to)+'</b><span>'+esc(s.okresy)+'</span></button>';}).join('')+'</div><div id="springRail"></div></section>';
-  // Zanzibar
-  var rain=[75,60,150,350,250,60,45,40,45,90,170,130], rmx=350;
-  if(withTag('zbest').length) html+='<section class="wrap shelf" id="zanzibar" aria-labelledby="znz-h"><div class="feature"><div><div class="eyebrow">Destinace v nejjistějším období</div><div class="big" id="znz-h">Zanzibar v srpnu a září</div><div class="bet">☀ Sázka na jistotu: 1. 8. – 30. 9.</div><p style="margin:0 0 8px;color:var(--ink-2)">Nevybíráme „většinou tam bývá hezky“. Z celého roku jsme vybrali jedno okno, kdy je nejmenší šance na déšť: suché období, kolem 28 °C, moře 26–27 °C a méně vlhko než v lednu.</p>'+
-    '<div class="clim" role="img" aria-label="Orientační srážky po měsících, nejnižší v červenci až září">'+rain.map(function(r,i){return '<div class="'+(i===7||i===8?'best':'')+'"><i style="height:'+Math.max(6,r/rmx*100)+'px"></i><small>'+['L','Ú','B','D','K','Č','Č','S','Z','Ř','L','P'][i]+'</small></div>';}).join('')+'</div><div class="legend">Orientační měsíční srážky. Oranžově zvolené okno.</div></div>'+
-    '<div class="compact">'+bestOf(withTag('zbest')).sort(function(a,b){return b.idx-a.idx}).slice(0,4).map(row).join('')+'<div style="padding-top:10px"><button type="button" class="btn ghost" data-act="tag" data-tag="zbest" data-name="Zanzibar v srpnu a září">Všechny termíny na Zanzibar →</button></div></div></div></section>';
-  // hotely
-  if(withTag('hotel-dxb').length||withTag('hotel-at').length) html+='<section class="wrap shelf" id="hotely" aria-labelledby="hot-h"><div class="shelf-h"><div><div class="eyebrow">Jen ubytování</div><h2 id="hot-h">Hotely, které jsme vybrali</h2><p>Když si let nebo cestu autem zařídíš sám. Cena je za noc a pokoj pro dva.</p></div></div><div class="split"><div><h3>Dubaj</h3><div class="compact">'+withTag('hotel-dxb').map(row).join('')+'</div></div><div><h3>Rakousko · lyže a wellness</h3><div class="compact">'+withTag('hotel-at').map(row).join('')+'</div></div></div></section>';
-  // léto
-  html+=shelf('cervenec','Léto 2027 · first minute','První polovina července mizí nejrychleji','Prázdniny mají všichni najednou, takže termíny od 1. do 15. 7. se vyprodávají jako první. Tady jsou ty nejzajímavější, které cestovky ještě nabízejí.',top('july'),'july');
-  // Řecko promo
-  html+='<section class="wrap shelf"><a class="promo" href="recko.html"><div class="tx"><div class="eyebrow" style="color:#ffb27a">Speciál</div><h2>Řecko po ostrovech</h2><p>First minute 2027 rozdělené podle ostrovů. Ke každému deset nejlepších nabídek, kdy jet a pro koho je.</p><div class="isl"><span>Kréta</span><span>Kos</span><span>Rhodos</span><span>Korfu</span><span>Zakynthos</span></div></div><div class="art">'+sky({d:{sky:['#bfe3ff','#5aa8e0','#0d3b66'],iata:'GR',k:'gr'}},180)+'</div></a></section>';
-  html+=shelf('zazitky','Eurovíkendy a zážitky','Let + hotel na pár dní','Polární záře na Islandu, psí spřežení v Laponsku, nebo prodloužený víkend v Paříži. Letenka i ubytování v jedné ceně.',withTag('combo'),'combo');
-  if(withTag('lux').length) html+='<section class="wrap shelf" id="luxus"><div class="lux">'+'<div class="shelf-h"><div><div class="eyebrow">Pro náročné</div><h2>Když má být dovolená zážitek na celý život</h2><p>Pětihvězdičkové resorty, vily nad vodou a soukromé pláže. Hlídáme i tady, kdy je cena rozumná.</p></div><button type="button" class="all" style="color:#e6b45a" data-act="tag" data-tag="lux" data-name="Pro náročné">Zobrazit vše →</button></div>'+rail(bestOf(withTag('lux')).sort(function(a,b){return b.ppp-a.ppp}))+'</div></section>';
-  if(!DEMO){
-    // automatické police z reálných dat (jen když mají dost nabídek)
-    var P=bestOf(ITEMS.filter(function(o){return o.type!=='flight'}));
-    function auto(id,eye,h2,p,fn,sort,n){var l=P.filter(fn).sort(sort||function(a,b){return b.idx-a.idx});l=mix(l).slice(0,n||14);return l.length>=4?shelf(id,eye,h2,p,l,null):'';}
-    var byIdx=function(a,b){return b.idx-a.idx}, byPpn=function(a,b){return a.ppn-b.ppn}, byDep=function(a,b){return a.dep-b.dep};
-    var A=[];
-    A.push(auto('vikend','Rychlý únik','Prodloužený víkend u moře','3 až 5 nocí, odlet do dvou měsíců. Na baterky stačí.',function(o){return o.n>=3&&o.n<=5&&o.dep-TODAY<62*864e5},byIdx));
-    A.push(auto('tyden15','Do 15 000 Kč','Týden u moře do 15 000 Kč na osobu','Nejlevnější poctivé týdny. Pořád s letenkou, transferem a ubytováním.',function(o){return o.ppp<=15000&&o.n>=6},byIdx));
-    A.push(auto('ai','All inclusive','All inclusive, kde se vyplatí','Strava i pití v ceně, hotely s nejlepším poměrem cena/výkon.',function(o){return o.board==='AI'||o.board==='UAI'},byIdx));
-    A.push(auto('dlouhe','10 a více nocí','Dva týdny za cenu jednoho','Delší pobyty s nejnižší cenou za noc.',function(o){return o.n>=10},byPpn));
-    A.push(auto('hodnoceni','Hosté jsou nadšení','Nejlépe hodnocené hotely','Hodnocení 9/10 a víc od skutečných hostů.',function(o){return o.hotel&&o.hotel.rating>=9},byIdx));
-    A.push(auto('exotika','Exotika','Exotika do 40 000 Kč','Maledivy, Zanzibar, Thajsko, Karibik a další – za rozumné peníze.',function(o){return /Maledivy|Zanzibar|Thajsko|Mauricius|Seychely|Dominik|Mexiko|Kuba|Srí|Indon|Kapverd/.test(o.d.ctry)&&o.ppp<=40000},byIdx));
-    ['OSR','BRQ','VIE','KTW'].forEach(function(a){A.push(auto('z'+a,'Odlet '+AIR_FROM[a],'Nejlepší odlety '+AIR_FROM[a],'Když nechceš jezdit do Prahy.',function(o){return o.air===a},byIdx,12));});
-    var COPY={
-      'Egypt':['Egypt','Korály u břehu a 25 °C i v lednu','Nejjistější zimní teplo do pěti hodin letu. Šnorchl s sebou.'],
-      'Řecko':['Řecko','Taverny, ostrovy a moře jak z pohlednice','Ráno řecký jogurt, odpoledne zátoka, večer gyros u přístavu.'],
-      'Turecko':['Turecko','All inclusive, kde se o nic nestaráš','Aquaparky pro děti, bar u bazénu pro tebe. A pořád za rozumné peníze.'],
-      'Itálie':['Itálie','Pizza, espresso a dolce vita','Moře, hory i města. Itálie, do které se vždycky vrátíš.'],
-      'Thajsko':['Thajsko','Ráj, ze kterého se nechce domů','Ostrovy, chrámy, nejlepší jídlo na světě. Suchá sezóna právě začíná.'],
-      'Spojené arabské emiráty':['Dubaj a Emiráty','Zimní slunce pod mrakodrapy','Pláž, poušť a nákupy. Přímý let za necelých šest hodin.'],
-      'Španělsko':['Španělsko','Fiesta, tapas a dlouhé pláže','Mallorca, Costa del Sol nebo Barcelona. Vyber si svoje Španělsko.'],
-      'Kanárské ostrovy':['Kanárské ostrovy','Věčné jaro pět hodin od Prahy','Když je doma plucha, tady je 23 °C. Celý rok.'],
-      'Bulharsko':['Bulharsko','Moře, na které nepotřebuješ celou výplatu','Nejlevnější all inclusive u moře. Pro rodiny s dětmi ideál.'],
-      'Maledivy':['Maledivy','Když to má být jednou za život','Domek nad vodou, ryby pod podlahou, nikde nikdo.'],
-      'Kypr':['Kypr','Ostrov s nejdelším létem v Evropě','Koupat se dá od dubna do listopadu. Skvělé jídlo a čisté moře.'],
-      'Tunisko':['Tunisko','Krátký let, dlouhé písečné pláže','Thalasso, medina a moře. Afrika na dosah.'],
-      'Mexiko':['Mexiko','Karibik, cenoty a mayské pyramidy','Tyrkysové moře na Riviéře Maya a tequila při západu slunce.'],
-      'Dominikánská republika':['Dominikánská republika','Palmy až k vodě','Bílý písek, rum a all inclusive, které nekončí.'],
-      'Kuba':['Kuba','Staré bouráky, rum a Varadero','Havana jako ve filmu, pak týden na nejhezčí pláži Karibiku.'],
-      'Mauricius':['Mauricius','Laguny, hory a francouzská kuchyně','Exotika, kde se člověk cítí jako doma.'],
-      'Zanzibar':['Zanzibar','Bílý písek a koření','Tyrkysová voda, minimální časový posun a výlety za delfíny.'],
-      'Portugalsko':['Portugalsko','Oceán, surfaři a pastéis de nata','Algarve a Madeira pro ty, kdo nechtějí jen ležet.'],
-      'Seychely':['Seychely','Nejhezčí pláže světa','Žulové balvany, želvy a voda, kterou nevymyslíš.'],
-      'Omán':['Omán','Arábie bez mrakodrapů','Hory, fjordy a poušť. Klidnější a pravější než Dubaj.'],
-      'Srí Lanka':['Srí Lanka','Čaj, sloni a vlny','Chrámy ve skále, čajové plantáže a pláže na jihu.']
-    };
-    // police po zemích podle počtu nabídek
-    var cnt={};P.forEach(function(o){cnt[o.d.ctry]=(cnt[o.d.ctry]||0)+1;});
-    Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]}).slice(0,10).forEach(function(c){
-      var cp=COPY[c]||[c,c+' podle nás',cnt[c]+' hotelů, vybrali jsme ty, které za svou cenu stojí.'];
-      var minc=Math.min.apply(null,P.filter(function(o){return o.d.ctry===c}).map(function(o){return o.ppp}));
-      A.push(auto('z-'+slug(c),cp[0]+' · od '+kc(minc),cp[1],cp[2],function(o){return o.d.ctry===c},byIdx,14));
-    });
-    // prokládat tematické a zemské police
-    html+=A.filter(Boolean).join('');
-  }
+  // ---------------------------------------------------------- ranní poklady (push)
   if($('pushOn')){
     var pon=$('pushOn'),pmsg=$('pushMsg'),pair=$('pushAir');
     function pushUI(st){if(st&&st.daily){pon.textContent='Vypnout ranní poklady';pon.className='btn ghost';pmsg.textContent='Zapnuto'+(st.air?' pro odlety '+(AIR_FROM[st.air]||st.air):'')+'. Další poklady zítra kolem osmé.';if(st.air)pair.value=st.air;}else{pon.textContent='Zapnout ranní poklady';pon.className='btn or';}}
@@ -808,81 +857,14 @@ function home(){
     });
     pair.addEventListener('change',function(){if(PUSH_ID&&pon.textContent.indexOf('Vypnout')===0)ensureSub({daily:true,air:pair.value}).then(pushUI).catch(function(){});});
   }
-  $('shelves').innerHTML=html;
   if(!DEMO) letenkovePoklady();
-  // nekonečný proud na konci stránky
-  if(!DEMO&&!document.getElementById('feed')){
-    var F=mix(bestOf(ITEMS).sort(function(a,b){return b.idx-a.idx})), fi=0;
-    var sec=document.createElement('section');sec.className='wrap shelf';sec.id='feed';
-    sec.innerHTML='<div class="shelf-h"><div><div class="eyebrow">Ještě nemáš dost?</div><h2>Další nabídky pro tebe</h2><p>Scrolluj dál, nabídky se načítají samy.</p></div></div><div id="feedGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px"></div><div id="feedEnd" style="height:40px"></div>';
-    var foot=document.querySelector('footer');foot.parentNode.insertBefore(sec,foot);
-    function more(){var add=F.slice(fi,fi+12);fi+=add.length;$('feedGrid').insertAdjacentHTML('beforeend',add.map(tile).join(''));if(fi>=F.length){$('feedEnd').textContent='To je všechno. Další várka cen za '+document.querySelector('[data-cd]').textContent+'.';$('feedEnd').className='mono';}}
-    more();
-    if('IntersectionObserver' in window) new IntersectionObserver(function(e){if(e[0].isIntersecting&&fi<F.length)more();},{rootMargin:'800px'}).observe($('feedEnd'));
-  }
-  // výpis nahoře: další nabídky se načítají samy při scrollu (max 60, pak tlačítko)
-  if('IntersectionObserver' in window){var autoN=0;new IntersectionObserver(function(e){if(e[0].isIntersecting&&!$('moreBtn').hidden&&autoN<5){autoN++;$('moreBtn').click();}},{rootMargin:'300px'}).observe($('moreBtn'));}
-
-  function springRail(w){if(!$('springRail'))return;var l=bestOf(withTag('sw'+w)).sort(function(a,b){return b.idx-a.idx});$('springRail').innerHTML='<div class="rail">'+l.map(tile).join('')+'</div>';}
-  springRail(5);
-  $('shelves').addEventListener('click',function(e){
-    var t=e.target.closest('[data-act="tag"]'); if(t){window.__showTag(t.getAttribute('data-tag'),t.getAttribute('data-name'));return;}
-    var w=e.target.closest('[data-act="week"]'); if(w){document.querySelectorAll('#weeks button').forEach(function(b){b.setAttribute('aria-pressed',b===w)});springRail(+w.getAttribute('data-w'));}
-  });
-  if($('okres')) $('okres').addEventListener('input',function(e){var v=norm(e.target.value.trim());if(v.length<3){$('okresHit').textContent='';return;}
-    var hit=SPRING.filter(function(s){return s.okresy.split(', ').some(function(x){return norm(x).indexOf(v)===0})})[0];
-    if(!hit){$('okresHit').textContent='okres nenalezen';return;}
-    $('okresHit').textContent='→ '+ds(hit.from)+' – '+ds(hit.to);
-    document.querySelectorAll('#weeks button').forEach(function(b){var on=+b.getAttribute('data-w')===hit.w;b.setAttribute('aria-pressed',on);if(on)b.scrollIntoView({inline:'center',block:'nearest'});});springRail(hit.w);});
-
-  // odletová tabule
-  var boardAir='ALL', airs=['ALL','PRG','OSR','BRQ','KTW','VIE'];
-  $('boardTabs').innerHTML=airs.map(function(a){return '<button type="button" data-ba="'+a+'" aria-pressed="'+(a==='ALL')+'">'+(a==='ALL'?'VŠE':a)+'</button>';}).join('');
-  var CH='ABCDEFGHIJKLMNOPQRSTUVWXYZÁČÉÍŘŠŽ0123456789 ';
-  function cells(text,len){text=(text+' '.repeat(len)).slice(0,len);return '<span class="cells" aria-hidden="true">'+text.split('').map(function(c){return '<span class="fl" data-c="'+esc(c)+'">'+(reduce?esc(c):' ')+'</span>';}).join('')+'</span><span class="sr">'+esc(text.trim())+'</span>';}
-  function flapAll(root){if(reduce)return;root.querySelectorAll('.fl').forEach(function(el,i){var t=el.getAttribute('data-c'),steps=4+Math.floor(Math.random()*8),n=0;setTimeout(function run(){if(n>=steps){el.textContent=t;el.classList.remove('flip');void el.offsetWidth;el.classList.add('flip');return;}el.textContent=CH[Math.floor(Math.random()*CH.length)];el.classList.remove('flip');void el.offsetWidth;el.classList.add('flip');n++;setTimeout(run,55);},(i%60)*12);});}
-  function renderBoard(){
-    var l=diverse(MAIN.filter(function(o){return o.type!=='hotel'&&(boardAir==='ALL'||o.air===boardAir)}).sort(function(a,b){return b.idx-a.idx}),12,1);
-    $('boardBody').innerHTML=l.map(function(o){var st=o.dropPct>=.06?'drop':o.isNew?'new':isTreasure(o)?'tip':'',tx=st==='drop'?'ZLEVNĚNO':st==='new'?'NOVÉ':st==='tip'?'POKLAD':'';
-      return '<tr class="r st-'+st+'" data-open="'+o.id+'" tabindex="0"><td>'+cells(pad(o.dep.getDate())+'.'+pad(o.dep.getMonth()+1),5)+'</td><td>'+cells(o.air,3)+'</td><td>'+cells(o.d.city.toUpperCase(),11)+'</td><td>'+cells(String(o.n),2)+'</td><td>'+cells(o.type==='flight'?'LETENKA':o.type==='combo'?'LET+HOTEL':BOARD_SHORT[o.board],9)+'</td><td>'+cells(Math.round(o.ppp).toLocaleString('cs-CZ').replace(/\s/g,' '),7)+'</td><td>'+cells(String(o.idx),2)+'</td><td>'+cells(tx,8)+'</td></tr>';}).join('');
-    flapAll($('boardBody'));
-  }
-  $('boardTabs').addEventListener('click',function(e){var b=e.target.closest('[data-ba]');if(!b)return;boardAir=b.getAttribute('data-ba');document.querySelectorAll('[data-ba]').forEach(function(x){x.setAttribute('aria-pressed',x===b)});renderBoard();});
-  renderBoard();
-  if('IntersectionObserver' in window){var seen=false;new IntersectionObserver(function(e,io){if(e[0].isIntersecting&&!seen){seen=true;renderBoard();io.disconnect();}},{rootMargin:'100px'}).observe($('tabule'));}
-
-  // teploty
-  (function(){
-    var LIST=['hrg','rmf','lpa','tfs','dxb','znz','mle','mru','sid','hkt','mct','pfo','her','ayt','pmi','dje','dur','var'];
-    function col(t){var k=Math.max(0,Math.min(1,(t-10)/24));return 'background:hsl('+(210-190*k).toFixed(0)+' 85% '+(93-30*k).toFixed(0)+'%);color:'+(k>.55?'#3a0b00':'#0d2a3a');}
-    var mi=[11,0,1,2,3,5,6,7,8], cur=NOW.getMonth();
-    var head='<thead><tr><th style="text-align:left">DESTINACE</th><th>LET</th>'+['Pro','Led','Úno','Bře','Dub','Čer','Čvc','Srp','Zář'].map(function(m,i){return '<th'+(mi[i]===cur||(cur===10&&i===0)?' style="color:var(--orange)"':'')+'>'+m.toUpperCase()+'</th>';}).join('')+'<th>OD</th></tr></thead>';
-    var rows=LIST.map(function(k){return DEST[k]}).sort(function(a,b){return b.temps[0]-a.temps[0]}).map(function(d){
-      var mins=MAIN.filter(function(o){return o.d.k===d.k&&o.type==='package'}).map(function(o){return o.ppp});
-      return '<tr class="click" data-dest="'+d.k+'" tabindex="0"><td class="n">'+esc(d.city)+'<small>'+esc(d.ctry)+'</small></td><td class="mono">'+String(d.fly).replace('.',',')+' h</td>'+d.temps.map(function(t){return '<td class="t" style="'+col(t)+'">'+t+'°</td>';}).join('')+'<td class="mono" style="font-weight:800">'+(mins.length?kc(Math.min.apply(null,mins)):'–')+'</td></tr>';}).join('');
-    $('heat').innerHTML=head+'<tbody>'+rows+'</tbody>';
-    function go(k){S.dest=k;S.tag=null;S.tab='all';S.savedOnly=false;shown=10;render();toList();}
-    $('heat').addEventListener('click',function(e){var r=e.target.closest('[data-dest]');if(r)go(r.getAttribute('data-dest'));});
-    $('heat').addEventListener('keydown',function(e){var r=e.target.closest('[data-dest]');if(r&&e.key==='Enter')go(r.getAttribute('data-dest'));});
-  })();
-
-  // hoď mě někam
-  $('rollBtn').addEventListener('click',function(){
-    var max=+$('rollMax').value,a=$('rollAir').value,btn=this,or=$('rollOrange');
-    var pool=MAIN.filter(function(o){return o.idx>=65&&o.type!=='hotel'&&o.ppp<=max&&(!a||o.air===a)});
-    or.classList.add('spinning');btn.disabled=true;
-    setTimeout(function(){or.classList.remove('spinning');btn.disabled=false;btn.textContent='Ještě jednou';
-      if(!pool.length){$('rollOut').innerHTML='<p style="margin:0">S tímhle rozpočtem a letištěm teď nemám nic dost dobrého. Zkus víc peněz nebo jiné letiště.</p>';return;}
-      $('rollOut').innerHTML='<div style="border-top:1px solid var(--line)">'+row(pool[Math.floor(Math.random()*pool.length)])+'</div>';},reduce?0:1300);
-  });
 
   // spodní lišta
   document.querySelector('.tabbar').addEventListener('click',function(e){var a=e.target.closest('[data-tb]');if(!a)return;var t=a.getAttribute('data-tb');document.querySelectorAll('[data-tb]').forEach(function(x){x.classList.toggle('on',x===a)});
-    if(t==='hledat'){e.preventDefault();$('q').focus();$('q').scrollIntoView({block:'center'});}
-    if(t==='ulozene'){e.preventDefault();S.savedOnly=true;S.tag=null;render();toList();}});
+    if(t==='kam'){e.preventDefault();$('kam').scrollIntoView({block:'start'});setTimeout(function(){$('kq').focus({preventScroll:true});},300);}
+    if(t==='ulozene'){e.preventDefault();S.savedOnly=true;S.tag=null;S.fn=null;S.tagName='';render();toList();}});
 
-  if(!DEMO) window.__cpRefresh=function(){window.__cpRefresh=null;setTimeout(function(){fetch('data/main.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(J){if(J.gen!==DATA.gen){if(document.hidden)location.reload();else toast('Máme nové ceny – obnov stránku');}});},5*60e3);};
-  else window.__cpRefresh=function(){ITEMS.forEach(function(o){if(Math.random()<.05){o.ppp=Math.round(o.ppp*(.96+Math.random()*.06)/10)*10;o.ppn=Math.round(o.ppp/(o.n||1));o.checkedMin=1;}});renderBoard();render();toast('Výpis aktualizován');};
+  if(!DEMO) window.__cpRefresh=function(){window.__cpRefresh=null;setTimeout(function(){fetch('data/main.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(J){if(J.gen!==DATA.gen){if(document.hidden)location.reload();else toast('Je tu nový tucet – obnov stránku');}});},5*60e3);};
   setTimeout(function(){try{localStorage.setItem('cp_last',Date.now())}catch(e){}},5000);
 }
 

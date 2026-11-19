@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Červený pomeranč</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="description" content="Živé tržiště zájezdů. Každé tři hodiny prověříme tisíce termínů cestovních kanceláří a ukážeme jen ty, které za svou cenu stojí.">
-<meta property="og:title" content="Červený pomeranč – živé tržiště zájezdů">
-<meta property="og:description" content="Poklady, poklesy cen a nové nabídky. Aktualizace každé 3 hodiny.">
+<meta name="description" content="Ne katalog, ale denní výběr. Každé dvě hodiny projdeme tisíce zájezdů a ukážeme dvanáct, které za svou cenu opravdu stojí. U každého napíšeme proč.">
+<meta property="og:title" content="Červený pomeranč – dnešní tucet zájezdů, které stojí za to">
+<meta property="og:description" content="Dvanáct zájezdů, které teď za svou cenu opravdu stojí. Nový výběr každé dvě hodiny.">
 <meta property="og:type" content="website"><meta property="og:locale" content="cs_CZ">
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Pomeranč">
@@ -60,7 +60,7 @@
 </svg>
 
 <div class="dlayer"><nav class="menu" id="menu" aria-label="Menu" aria-hidden="true">
-  <a href="#vypis" data-close>Výpis nabídek</a><a href="#vanoce" data-close>Vánoce a Silvestr</a><a href="#jarni" data-close>Jarní prázdniny</a><a href="#cervenec" data-close>Léto 2027</a><a href="recko.html">Speciál Řecko</a><a href="#zazitky" data-close>Eurovíkendy a zážitky</a><a href="#luxus" data-close>Pro náročné</a><a href="#tabule" data-close>Odletová tabule</a><a href="#teplo" data-close>Kam za teplem</a><a href="#hod" data-close>Hoď mě někam</a>
+  <a href="#dnes" data-close>Dnešní tucet</a><a href="#kam" data-close>Kam to bude?</a><a href="#letenky" data-close>Letenkové poklady</a><a href="#chytaky" data-close>Chytáky</a><a href="#nalada" data-close>Podle nálady</a><a href="#vypis" data-close>Prohledat všechno</a><a href="recko.html">Speciál Řecko</a>
   <a href="#" data-install data-close>📲 Přidat Pomeranč na plochu</a>
   <a href="o-nas.html">O nás a kontakt</a><a href="jak-vybirame.html">Jak vybíráme</a><a href="ochrana-udaju.html">Ochrana údajů</a>
 </nav></div>
@@ -73,25 +73,32 @@
   </a>
   <button class="iconbtn" id="bellBtn" type="button" aria-label="Nové nabídky od poslední návštěvy"><svg class="i"><use href="#i-bell"/></svg><span class="badge" id="bellN">0</span></button>
 </header>
-<div class="tagline">Živé tržiště zájezdů <b>·</b> nové ceny každé 2 hodiny</div>
-
-<div class="wrap layout">
-  <main id="vypis">
-    <div class="stats" role="list">
-      <div class="stat" role="listitem"><svg class="i ic spin"><use href="#i-sync"/></svg><div><div class="k">Další aktualizace za</div><div class="v"><span data-cd>--:--:--</span><span class="dot" aria-hidden="true"></span></div></div></div>
-      <div class="stat" role="listitem"><svg class="i ic"><use href="#i-plus"/></svg><div><div class="k">Dnes přidáno</div><div class="v">+<span id="sNew">0</span></div></div></div>
-      <div class="stat" role="listitem"><svg class="i ic"><use href="#i-down"/></svg><div><div class="k">Ceny klesly</div><div class="v down"><span id="sDrop">0</span></div></div></div>
-    </div>
-
+<div class="tagline">Ne katalog <b>·</b> denní výběr</div>
+<section class="wrap dnes" id="dnes" aria-label="Dnešní tucet"><p class="lead" style="padding:40px 0">Načítám dnešní výběr…</p></section>
+<section class="kam" id="kam" aria-labelledby="kam-h"><div class="wrap">
+  <div class="eyebrow">Kam to bude?</div>
+  <h2 id="kam-h">Napiš místo. Ukážeme jen to nejlepší.</h2>
+  <div class="kbox"><svg class="i"><use href="#i-search"/></svg><label class="sr" for="kq">Destinace</label><input id="kq" type="search" placeholder="Dubaj, Maledivy, Kréta…" autocomplete="off" enterkeyhint="search"><button type="button" class="btn or" id="kgo">Ukaž</button></div>
+  <div class="kchips" id="kchips"></div>
+  <div id="kout" aria-live="polite"></div>
+</div></section>
+<div id="lp-slot"></div>
+<section class="chy" id="chytaky" aria-label="Chytáky"></section>
+<section class="wrap nal" id="nalada" aria-labelledby="nal-h">
+  <div class="eyebrow">Podle nálady</div><h2 id="nal-h">Na co máš chuť?</h2>
+  <div class="nchips" id="nchips"></div>
+</section>
+<section class="wrap vyp" id="vypis" aria-labelledby="vyp-h">
+  <div class="eyebrow">Pro ty, co chtějí všechno</div><h2 id="vyp-h">Prohledat všech <span id="vAll">0</span> hotelů</h2>
     <div class="search">
-      <label class="sbox"><svg class="i" style="color:var(--mute)"><use href="#i-search"/></svg><span class="sr">Hledat</span><input id="q" type="search" placeholder="Kam chcete vyrazit?" autocomplete="off"></label>
+      <label class="sbox"><svg class="i" style="color:var(--mute)"><use href="#i-search"/></svg><span class="sr">Hledat</span><input id="q" type="search" placeholder="Hotel, místo, letiště…" autocomplete="off"></label>
       <button class="fbtn" id="advBtn" type="button" aria-pressed="false" aria-label="Další filtry"><svg class="i"><use href="#i-sliders"/></svg></button>
     </div>
     <div class="drops">
       <label class="dd" id="ddMonth"><svg class="i"><use href="#i-cal2"/></svg><span class="sr">Termín</span><select id="fMonth"></select></label>
       <label class="dd" id="ddPax"><svg class="i"><use href="#i-user"/></svg><span class="sr">Osoby</span><select id="fPax"><option value="2">2 dospělí</option><option value="1">1 dospělý</option><option value="3">2 + 1 dítě</option><option value="4">2 + 2 děti</option></select></label>
-      <label class="dd" id="ddMax"><svg class="i"><use href="#i-euro"/></svg><span class="sr">Cena</span><select id="fMax"><option value="0">Cena</option><option value="10000">do 10 000</option><option value="15000">do 15 000</option><option value="20000">do 20 000</option><option value="30000">do 30 000</option></select></label>
-      <label class="dd" id="ddBoard"><svg class="i"><use href="#i-bed"/></svg><span class="sr">Typ</span><select id="fBoard"><option value="">Typ</option><option value="AI">All inclusive</option><option value="HB">Polopenze</option><option value="BB">Snídaně</option></select></label>
+      <label class="dd" id="ddMax"><svg class="i"><use href="#i-euro"/></svg><span class="sr">Cena</span><select id="fMax"><option value="0">Cena</option><option value="10000">do 10 000</option><option value="15000">do 15 000</option><option value="20000">do 20 000</option><option value="30000">do 30 000</option><option value="50000">do 50 000</option></select></label>
+      <label class="dd" id="ddBoard"><svg class="i"><use href="#i-bed"/></svg><span class="sr">Strava</span><select id="fBoard"><option value="">Strava</option><option value="AI">All inclusive</option><option value="HB">Polopenze</option><option value="BB">Snídaně</option></select></label>
       <label class="dd" id="ddAir"><svg class="i"><use href="#i-plane"/></svg><span class="sr">Odlet</span><select id="fAir"><option value="">Odlet</option><option value="PRG">Praha</option><option value="OSR">Ostrava</option><option value="BRQ">Brno</option><option value="PED">Pardubice</option><option value="KTW">Katovice</option><option value="VIE">Vídeň</option><option value="BTS">Bratislava</option></select></label>
     </div>
     <div class="adv" id="adv">
@@ -101,52 +108,11 @@
       <label><input type="checkbox" id="fStars"> 5★</label>
       <button class="btn ghost" id="reset" type="button" style="padding:7px 12px">Zrušit filtry</button>
     </div>
-
     <div class="tabs" role="tablist" aria-label="Výběr" id="tabs"></div>
     <div class="list" id="list" role="tabpanel"></div>
-    <div class="more"><button class="btn ghost" id="moreBtn" type="button">Načíst další nabídky</button></div>
-    <div class="note"><svg class="i"><use href="#i-info"/></svg><span>Nejsme prodejci zájezdů. Vybíráme pro vás zajímavé nabídky cestovních kanceláří a leteckých prodejců.</span></div>
-  </main>
-
-  <aside class="side" aria-label="Dnešní výběr">
-    <div class="panel"><div class="ph"><span class="ptitle">Úlovek dne</span><span class="mono" style="font-size:11px;color:var(--mute)" id="catchIdx"></span></div><button class="catch" type="button" id="catch"></button></div>
-    <div class="mini" id="miniBoard"><span class="ptitle">Odlety s úlovkem</span><div id="miniRows"></div></div>
-    <div class="panel"><div class="ph"><span class="ptitle">Robot dnes našel</span></div><div id="anoms"></div></div>
-  </aside>
-</div>
-
-<div id="shelves"></div>
-
-<section class="wrap block" id="tabule" aria-labelledby="tab-h">
-  <div class="sh"><div class="eyebrow">Ceny</div><h2 id="tab-h">Odletová tabule</h2><p>Top 12 podle Pomeranč indexu. Při každé aktualizaci se tabule překlopí.</p></div>
-  <div class="board">
-    <div class="board-head"><div class="board-title">ODLETY · TOP 12</div><div class="btabs" id="boardTabs" role="group" aria-label="Letiště"></div></div>
-    <div class="board-scroll"><table class="flights"><thead><tr><th>ODLET</th><th>Z</th><th>DO</th><th>NOCÍ</th><th>TYP</th><th>KČ / OS.</th><th>INDEX</th><th>STAV</th></tr></thead><tbody id="boardBody"></tbody></table></div>
-    <div class="board-foot">Klikni na řádek pro detail · <span style="color:var(--amber)">NOVÉ</span> · <span style="color:#ff7a52">ZLEVNĚNO</span> · <span style="color:#7fd7ff">POKLAD</span></div>
-  </div>
+    <div class="more"><button class="btn ghost" id="moreBtn" type="button">Načíst další</button></div>
+    <div class="note"><svg class="i"><use href="#i-info"/></svg><span>Nejsme cestovka. Vybíráme z nabídek cestovních kanceláří a leteckých prodejců, nakupuješ přímo u nich.</span></div>
 </section>
-
-<section class="wrap block" id="teplo" aria-labelledby="t-h">
-  <div class="sh"><div class="eyebrow">Inspirace</div><h2 id="t-h">Kam za teplem</h2><p>Průměrné denní maximum vzduchu po měsících, orientačně. Klikni na destinaci a výpis se vyfiltruje.</p></div>
-  <div class="heat-scroll"><table class="heat" id="heat"></table></div>
-</section>
-
-<section class="wrap block" id="hod" aria-labelledby="r-h">
-  <div class="roll">
-    <svg class="orange" id="rollOrange" viewBox="0 0 100 100" aria-hidden="true"><use href="#og"/></svg>
-    <div>
-      <div class="eyebrow">Když nevíš kam</div>
-      <h2 id="r-h" style="font-family:var(--display);font-weight:800;font-size:clamp(26px,3.4vw,36px);letter-spacing:-.025em;margin:4px 0 0;line-height:1">Hoď mě někam</h2>
-      <div class="roll-ctrl">
-        <select id="rollMax" aria-label="Rozpočet"><option value="10000">do 10 000 Kč</option><option value="12000">do 12 000 Kč</option><option value="18000" selected>do 18 000 Kč</option><option value="30000">do 30 000 Kč</option><option value="99999">je mi to jedno</option></select>
-        <select id="rollAir" aria-label="Letiště"><option value="">odkudkoli</option><option value="PRG">z Prahy</option><option value="OSR">z Ostravy</option><option value="BRQ">z Brna</option><option value="KTW">z Katovic</option><option value="VIE">z Vídně</option></select>
-        <button class="btn or" id="rollBtn" type="button">Roztočit pomeranč</button>
-      </div>
-      <div id="rollOut"><p style="color:var(--ink-2);margin:0">Vylosuju jeden poklad, který sedí na rozpočet a letiště.</p></div>
-    </div>
-  </div>
-</section>
-
 <section class="wrap block" aria-labelledby="app-h">
   <div class="app">
     <div class="p"><div class="phone"><div class="ic"><svg viewBox="0 0 100 100" aria-hidden="true"><use href="#og"/></svg><b id="badge">12</b></div>
@@ -167,11 +133,11 @@
 </footer>
 
 <nav class="tabbar" aria-label="Aplikace">
-  <a href="#prehled" class="on" data-tb="prehled"><svg class="i"><use href="#i-home"/></svg>Přehled</a>
-  <a href="#vypis" data-tb="hledat"><svg class="i"><use href="#i-search"/></svg>Hledat</a>
+  <a href="#dnes" class="on" data-tb="dnes"><svg class="i"><use href="#i-home"/></svg>Dnes</a>
+  <a href="#kam" data-tb="kam"><svg class="i"><use href="#i-search"/></svg>Kam?</a>
   <a href="#vypis" data-tb="ulozene"><svg class="i"><use href="#hrt"/></svg><span class="badge" id="tbSaved">0</span>Uložené</a>
-  <a href="#tabule" data-tb="ceny"><svg class="i"><use href="#i-chart"/></svg>Ceny</a>
-  <a href="#teplo" data-tb="inspirace"><svg class="i"><use href="#i-compass"/></svg>Inspirace</a>
+  <a href="#letenky" data-tb="letenky"><svg class="i"><use href="#i-plane"/></svg>Letenky</a>
+  <a href="#vypis" data-tb="vse"><svg class="i"><use href="#i-compass"/></svg>Všechno</a>
 </nav>
 
 <div class="scrim" id="scrim"></div>
