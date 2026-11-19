@@ -575,3 +575,6 @@ footer nav{display:flex;gap:16px;flex-wrap:wrap}
 @media (max-width:760px){.lxg{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:80%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}.lx{scroll-snap-align:start}}
 .zl .zx{display:none}.zl.open .zx{display:grid}
 .zmore{grid-column:1/-1;justify-self:start;margin-top:14px;color:#1d1a17;border-color:#d9c7ab}
+.dnes .stats{margin:4px 0 14px}
+button.stat{background:none;border:0;border-left:1px solid var(--line);text-align:left;cursor:pointer;color:inherit;font:inherit}
+button.stat:hover .k{color:var(--orange)}

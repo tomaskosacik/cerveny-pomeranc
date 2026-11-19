@@ -700,9 +700,14 @@ function home(){
   var H=TUC[0];
   var sl=DATA?new Date(DATA.gen):new Date();
   var terms=MAIN.length, hotels=P.length;
+  var dh=function(f){var s={};MAIN.forEach(function(o){if(o.hotel&&f(o))s[hk(o)]=1;});return Object.keys(s).length;};
+  var nNew=dh(function(o){return o.isNew}), nDrop=dh(function(o){return o.dropPct>0});
   if(H){
     var hf=facts(H);
     $('dnes').innerHTML=
+      '<div class="stats" role="list"><div class="stat" role="listitem"><svg class="i ic spin"><use href="#i-sync"/></svg><div><div class="k">Další výběr za</div><div class="v"><span data-cd>--:--:--</span><span class="dot" aria-hidden="true"></span></div></div></div>'+
+      '<button type="button" class="stat" data-st="nove"><svg class="i ic"><use href="#i-plus"/></svg><div><div class="k">Dnes přidáno</div><div class="v">+'+nNew+'</div></div></button>'+
+      '<button type="button" class="stat" data-st="sleva"><svg class="i ic"><use href="#i-down"/></svg><div><div class="k">Ceny klesly</div><div class="v down">'+nDrop+'</div></div></button></div>'+
       '<div class="ed mono"><span>VÝBĚR '+['NE','PO','ÚT','ST','ČT','PÁ','SO'][sl.getDay()]+' '+sl.getDate()+'. '+(sl.getMonth()+1)+'. · '+pad(sl.getHours())+':'+pad(sl.getMinutes())+'</span><span>'+terms.toLocaleString('cs-CZ')+' termínů → 12</span><span>další za <b data-cd>--:--:--</b></span></div>'+
       '<h1>Dnešní tucet</h1><p class="lead">Ze všech zájezdů, které cestovky právě prodávají, vybereme dvanáct, které za svou cenu opravdu stojí. U každého napíšeme proč. Každé dvě hodiny nový výběr.</p>'+
       '<article class="hero" data-open="'+H.id+'" tabindex="0"><div class="hpic">'+pic(H,240)+'<span class="hlab mono">01 · POMERANČ DNE</span></div>'+
@@ -879,6 +884,7 @@ function home(){
   var newC=MAIN.filter(function(o){return o.isNew}).length; $('bellN').textContent=newC>99?'99+':newC; if($('badge'))$('badge').textContent=newC||12;
   $('bellBtn').addEventListener('click',function(){S.tab='nove';S.savedOnly=false;S.fn=null;S.tagName='';render();toList();});
   render();
+  $('dnes').addEventListener('click',function(e){var b=e.target.closest('[data-st]');if(!b)return;S.tab=b.getAttribute('data-st');S.savedOnly=false;S.fn=null;S.tag=null;S.tagName='';shown=10;render();toList();});
 
   // ---------------------------------------------------------- ranní poklady (push)
   if($('pushOn')){
