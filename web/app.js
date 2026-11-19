@@ -247,7 +247,7 @@ function fromFlights(F,J){
     var dep=new Date(r[4]+'T00:00:00'), ret=new Date(r[5]+'T00:00:00'), days=Math.max(1,Math.round((ret-dep)/864e5));
     var base=DEST[CTRY[r[3]]]||EXTRA[r[3]]||{};
     var d={k:'f-'+r[1],city:r[2],ctry:r[3]||r[2],iata:r[1],fly:r[11]?Math.round((r[11]/780+.6)*10)/10:0,km:r[11]||0,sea:base.sea||null,temps:base.temps||[],sky:base.sky||['#e3efff','#9cbcf0','#26446f'],hint:base.hint||'',car:false};
-    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:[r[13]?'business':'flights'],direct:r[8]===0,url:r[9],partner:'a',disc:0,cls:r[13]||0,km:r[11]||0};
+    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:[r[13]?'business':'flights'],direct:r[8]===0,changes:r[8],url:r[9],partner:'a',disc:0,cls:r[13]||0,km:r[11]||0};
     if(r[1]==='DXB'&&!r[13]) o.tags.push('dxbflight');
     if(!r[13]&&(r[11]||0)>3500) o.tags.push('daleko');
     o.id=NEXT++; o.age=9999; o.isNew=false; o.drop=0; o.dropPct=0; o.ppn=Math.round(o.ppp/days);
@@ -597,19 +597,20 @@ function letenkovePoklady(){
   var FL=ITEMS.filter(function(o){return o.type==='flight'});
   var slot=$('lp-slot'); if(!slot||!FL.length) return;
   var REG={asie:/Thajsko|Vietnam|Indonésie|Malajsie|Singapur|Japonsko|Korea|Čína|Hongkong|Srí Lanka|Maledivy|Indie|Filipíny|Kambodža|Nepál|Tchaj/,arabie:/Emiráty|Katar|Omán|Saúdská|Bahrajn|Jordánsko|Kuvajt/,amerika:/Spojené státy|Kanada|Mexiko|Kuba|Dominik|Brazílie|Argentina|Kolumbie|Peru|Chile|Kostarika|Panama|Jamajka|Portoriko/,afrika:/Tanzanie|Zanzibar|Keňa|Jihoafrická|Mauricius|Seychely|Kapverdy|Madagaskar|Egypt|Maroko|Réunion|Kanárské|Španělsko|Portugalsko/};
-  var S={reg:'',air:'',cls:0,lim:8};
+  var S={reg:'',air:'',cls:0,lim:6};
   function region(o){for(var k in REG)if(REG[k].test(o.d.ctry))return k;return 'jine';}
   function hours(o){return o.d.fly?String(o.d.fly).replace('.',',')+' h':'';}
   function card(l){
-    var o=l[0], more=l.length-1;
-    return '<article class="bp'+(o.cls?' biz':'')+'" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(AIR[o.air]+' – '+o.d.city+', '+kc(o.ppp))+'">'+
-      '<div class="bp-top"><span>✈ ZPÁTEČNÍ LETENKA</span><span>'+(o.cls?'BUSINESS':'ECONOMY')+'</span></div>'+
-      '<div class="bp-route"><div class="bp-c"><b>'+o.air+'</b><small>'+esc(AIR[o.air]||o.air)+'</small></div><div class="bp-fly"><i></i><span>✈</span><small>'+hours(o)+'</small></div><div class="bp-c r"><b>'+esc(o.d.iata)+'</b><small>'+esc(o.d.city)+'</small></div></div>'+
-      '<div class="bp-meta"><div><small>TAM</small>'+ds(o.dep)+'</div><div><small>ZPĚT</small>'+ds(o.ret)+'</div><div><small>LET</small>'+(o.direct?'přímý':'s přestupem')+'</div></div>'+
-      '<div class="bp-tear" aria-hidden="true"></div>'+
-      '<div class="bp-foot"><div class="bp-price">'+kc(o.ppp)+'<small>'+esc(o.d.ctry)+' · za osobu</small></div><div class="bp-bar" aria-hidden="true"></div></div>'+
-      (more?'<div class="bp-more">+ '+more+' '+(more===1?'další termín':more<5?'další termíny':'dalších termínů')+'</div>':'')+
-    '</article>';
+    var o=l[0], und=o.typical>o.ppp?Math.round((o.typical-o.ppp)/o.typical*100):0;
+    var ch=o.changes==null?(o.direct?'přímý let':'s přestupem'):o.changes===0?'přímý let':o.changes===1?'1 přestup':o.changes+' přestupy';
+    var oth=l.slice(1,5);
+    return '<article class="lr'+(o.cls?' biz':'')+'" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(AIR[o.air]+' – '+o.d.city+', '+kc(o.ppp))+'">'+
+      '<div class="lr-code mono">'+esc(o.d.iata)+'</div>'+
+      '<div class="lr-b"><div class="lr-t">'+esc(o.d.city)+' <span>'+esc(o.d.ctry!==o.d.city?o.d.ctry:'')+'</span>'+(o.cls?' <i class="lr-biz mono">BUSINESS</i>':'')+'</div>'+
+      '<div class="lr-f mono">'+esc(AIR_FROM[o.air]||o.air)+' · '+ds(o.dep)+' → '+ds(o.ret)+' · '+o.n+' dní</div>'+
+      '<div class="lr-f mono"><b class="'+(o.changes===0?'ok':'')+'">'+ch+'</b>'+(o.d.fly?' · let ≈ '+String(o.d.fly).replace('.',',')+' h':'')+(o.km?' · '+o.km.toLocaleString('cs-CZ')+' km':'')+'</div>'+
+      (oth.length?'<div class="lr-o">'+oth.map(function(x){return '<button type="button" data-open="'+x.id+'">'+dc(x.dep)+(x.air!==o.air?' '+x.air:'')+' <b>'+kc(x.ppp)+'</b></button>';}).join('')+(l.length>5?'<span>+ '+(l.length-5)+' dalších</span>':'')+'</div>':'')+
+      '</div><div class="lr-p"><b class="num">'+kc(o.ppp)+'</b><small>zpáteční / os.</small>'+(und>=8?'<em>−'+und+' % proti běžné ceně</em>':'')+'</div></article>';
   }
   function render(){
     var l=FL.filter(function(o){return (S.cls?o.cls===1:!o.cls)&&(!S.air||o.air===S.air)&&(!S.reg||region(o)===S.reg)});
@@ -626,9 +627,9 @@ function letenkovePoklady(){
     '<div class="lp-head"><div class="lp-eye">KAM POLETÍME</div><h2 id="lp-h">Letenkové poklady</h2><p>Jen daleké lety, kde se letenka opravdu vyplatí. Zpáteční ceny z posledních hodin z Prahy a okolních letišť. Ubytování si zařídíš sám.</p></div>'+
     '<div class="lp-chips" id="lpReg">'+[['','Všude'],['asie','Asie'],['arabie','Arábie'],['amerika','Amerika'],['afrika','Afrika a ostrovy'],['biz','Business class']].map(function(c,i){return '<button type="button" data-r="'+c[0]+'" aria-pressed="'+(i===0)+'">'+c[1]+'</button>';}).join('')+'</div>'+
     '<div class="lp-chips small" id="lpAir">'+airs.map(function(a,i){return '<button type="button" data-a="'+a+'" aria-pressed="'+(i===0)+'">'+(a?AIR_FROM[a]:'odkudkoli')+'</button>';}).join('')+'</div>'+
-    '<div class="lp-grid" id="lpGrid"></div><button type="button" class="lp-more" id="lpMore">Ukázat další destinace</button></div></section>';
-  $('lpReg').addEventListener('click',function(e){var b=e.target.closest('[data-r]');if(!b)return;S.lim=8;var r=b.getAttribute('data-r');S.cls=r==='biz'?1:0;S.reg=r==='biz'?'':r;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
-  $('lpAir').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b)return;S.lim=8;S.air=b.getAttribute('data-a');this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+    '<div class="lr-list" id="lpGrid"></div><button type="button" class="lp-more" id="lpMore">Ukázat další destinace</button></div></section>';
+  $('lpReg').addEventListener('click',function(e){var b=e.target.closest('[data-r]');if(!b)return;S.lim=6;var r=b.getAttribute('data-r');S.cls=r==='biz'?1:0;S.reg=r==='biz'?'':r;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+  $('lpAir').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b)return;S.lim=6;S.air=b.getAttribute('data-a');this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
   $('lpMore').addEventListener('click',function(){S.lim+=16;render();});
   render();
 }
@@ -647,7 +648,7 @@ function home(){
     var f=[];
     if(o.anom&&o.anom.kind!=='cheap') f.push(o.anom.txt);
     var g=SG[sgk(o)];
-    if(g&&g.length>=8){var m=median(g),p=Math.round((m-o.ppn)/m*100);if(p>=10){o._under=p;f.push('O '+p+' % levnější než jiné '+o.hotel.stars+'★ '+(BOARD[o.board]||'zájezdy')+' ('+o.d.ctry+', '+MONTHS_FULL[o.dep.getMonth()]+').');}}
+    if(g&&g.length>=8){var m=median(g),p=Math.round((m-o.ppn)/m*100);if(p>=10){o._under=p;f.push((p>40?'O víc než 40 %':'O '+p+' %')+' levnější než jiné '+o.hotel.stars+'★ '+(BOARD[o.board]||'zájezdy')+' ('+o.d.ctry+', '+MONTHS_FULL[o.dep.getMonth()]+').');}}
     var sib=byHotel[hk(o)]||[];
     if(sib.length>=3&&o.ppp<=Math.min.apply(null,sib.map(function(x){return x.ppp}))) f.push('Nejlevnější z '+sib.length+' termínů tohoto hotelu.');
     if(o.hotel.rating>=8.5&&(!o.hotel.reviews||o.hotel.reviews>=25)) f.push('Hosté dávají '+rate(o)+'/10'+(o.hotel.reviews?' ('+o.hotel.reviews.toLocaleString('cs-CZ')+' hodnocení)':'')+'.');
@@ -677,13 +678,13 @@ function home(){
     var cap=m[cw]&&m[cw].ppp<=best.ppp?'Nejlevnější týden v příštích '+W+' týdnech.':'Levněji vychází týden od '+ds(best.dep)+' ('+kc(best.ppp)+'), klikni na sloupec.';
     return '<div class="wk"><div class="wk-h mono">'+esc(o.d.ctry).toUpperCase()+' · '+nights(o.n).toUpperCase()+' · NEJNIŽŠÍ CENA PODLE TÝDNE ODLETU</div><svg viewBox="0 0 100 80" preserveAspectRatio="none" class="wk-s" role="img" aria-label="Ceny podle týdne odletu">'+bars+'</svg><div class="wk-x mono">'+lab+'</div><div class="wk-c">'+cap+'</div></div>';
   }
-  function trow(o,i){
+  function trow(o,i,extra){
     var f=facts(o);
     return '<article class="tr" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(place(o)+', '+kc(o.ppp))+'">'+
       '<div class="tn mono">'+(i==null?'':pad(i+1))+'</div>'+
       '<div class="tb"><div class="tt">'+esc(place(o))+'</div>'+
       '<div class="th">'+esc(o.hotel.name)+' <span class="st">'+'★'.repeat(o.hotel.stars)+'</span>'+(o.hotel.rating?' <span class="rt">'+rate(o)+'</span>':'')+'</div>'+
-      '<div class="tf mono">'+[AIR_FROM[o.air]||o.air,dc(o.dep)+'–'+dc(o.ret),nights(o.n),BOARD[o.board]||''].filter(Boolean).join(' · ')+'</div>'+
+      '<div class="tf mono">'+[AIR_FROM[o.air]||o.air,dc(o.dep)+'–'+dc(o.ret),nights(o.n),BOARD[o.board]||''].filter(Boolean).join(' · ')+(extra?' '+extra:'')+'</div>'+
       (f.length?'<ul class="tw">'+f.slice(0,1).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+'</div>'+
       '<div class="tp"><div class="p num">'+kc(o.ppp)+'</div><small>'+kc(o.ppn)+' / noc</small>'+mini(o)+'</div></article>';
   }
@@ -712,6 +713,39 @@ function home(){
       '<div class="tl">'+TUC.slice(1).map(function(o,i){return trow(o,i+1);}).join('')+'</div>'+
       '<div class="tend"><b>To je celý dnešní tucet.</b> Nový výběr za <span class="mono" data-cd>--:--:--</span>. <span class="tend-b"><button type="button" class="btn or" data-install>📲 Mít ho na ploše</button><a class="btn ghost" href="#ranni">☀ Posílat ráno</a></span></div>';
   }
+
+  // ---------------------------------------------------------- útěk ze zimy
+  var WARM=/Egypt|Spojené arabské|Kanárské|Maledivy|Thajsko|Zanzibar|Dominik|Mexiko|Kuba|Mauricius|Srí|Kapverd|Omán|Seychely|Indonés/;
+  function tempOf(o){var mi=[1,2,3,4,4,5,6,7,8,8,0,0][o.dep.getMonth()];return o.d.temps&&o.d.temps[mi]!=null?o.d.temps[mi]:null;}
+  function zfit(o,t){var m=o.dep.getMonth(),y=o.dep.getFullYear(),inW=(y===2026&&m===11)||(y===2027&&m<=1);if(!inW||!WARM.test(o.d.ctry)||daysTo(o)<2)return false;
+    if(t==='xmas')return o.tags.indexOf('xmas')>=0;if(t==='jan')return m===0;if(t==='feb')return m===1;if(t==='dxb')return o.d.ctry==='Spojené arabské emiráty';return true;}
+  function zrender(t){
+    var by={};ALLP.forEach(function(o){if(!zfit(o,t))return;facts(o);o._zs=o.idx+(o._under||0)/3;var k=hk(o);if(!by[k]||o._zs>by[k]._zs)by[k]=o;});
+    var l=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return b._zs-a._zs}),out=[],c={},ck={};
+    if(t==='all') l.filter(function(o){return o.d.ctry==='Spojené arabské emiráty'}).slice(0,3).forEach(function(o){out.push(o);c[o.d.ctry]=9;ck[o.d.k+'|'+o.d.city]=1;});
+    l.forEach(function(o){if(out.length>=12)return;var k=o.d.k+'|'+o.d.city;if(out.indexOf(o)>=0||(c[o.d.ctry]||0)>=(t==='dxb'?12:2)||(t!=='dxb'&&ck[k]))return;c[o.d.ctry]=(c[o.d.ctry]||0)+1;ck[k]=1;out.push(o);});
+    $('zList').innerHTML=out.length?out.map(function(o,i){var tp=tempOf(o);return trow(o,null,tp!=null?'<span class="zt">☀ '+tp+' °C</span>':'').replace('class="tr"','class="tr'+(i>=6?' zx':'')+'"');}).join('')+(out.length>6?'<button type="button" class="btn ghost zmore" onclick="this.parentNode.classList.add(\'open\');this.remove()">Ukázat dalších '+(out.length-6)+'</button>':''):'<p class="lead">Na tenhle výběr teď nic nemáme.</p>';
+  }
+  var ZT=[['all','Celá zima'],['xmas','Vánoce a Silvestr'],['jan','Leden'],['feb','Únor'],['dxb','Jen Dubaj']];
+  var dx=DEST.dxb;
+  $('zima').innerHTML='<div class="wrap"><div class="eyebrow">Útěk ze zimy · prosinec až únor</div><h2>Kam za sluncem, než u nás roztaje</h2>'+
+    '<p class="lead">Teplé destinace s odletem v zimě. Nahoře Dubaj: v lednu kolem '+(dx?dx.temps[1]:24)+' °C, moře '+(dx?dx.sea:24)+' °C a necelých šest hodin letu.</p>'+
+    '<div class="zchips" id="zTabs">'+ZT.map(function(z,i){return '<button type="button" data-z="'+z[0]+'" aria-pressed="'+(i===0)+'">'+z[1]+'</button>';}).join('')+'</div><div id="zList" class="zl"></div></div>';
+  $('zTabs').addEventListener('click',function(e){var b=e.target.closest('[data-z]');if(!b)return;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});zrender(b.getAttribute('data-z'));});
+  zrender('all');
+
+  // ---------------------------------------------------------- luxus ve slevě
+  var LUX=(function(){var by={};ALLP.forEach(function(o){if(!(o.disc>=12)||o.hotel.stars<4.5||daysTo(o)<2)return;if(o.disc>50)return;var orig=Math.round(o.ppp/(1-o.disc/100)/100)*100;if(orig*2<90000||o.ppp*2>260000)return;o._orig=orig;var k=hk(o);if(!by[k]||(orig-o.ppp)>(by[k]._orig-by[k].ppp))by[k]=o;});
+    var l=Object.keys(by).map(function(k){return by[k]}).sort(function(a,b){return (b._orig-b.ppp)-(a._orig-a.ppp)}),out=[],c={};
+    l.forEach(function(o){if(out.length>=12||(c[o.d.ctry]||0)>=3)return;c[o.d.ctry]=(c[o.d.ctry]||0)+1;out.push(o);});return out;})();
+  if(LUX.length>=4){
+    $('luxus').innerHTML='<div class="wrap"><div class="eyebrow">Luxus ve slevě</div><h2>Pět hvězd o desítky tisíc levněji</h2><p class="lead">Nejdražší hotely, které cestovky právě zlevnily nejvíc. Ceny za dva, ať je vidět, kolik zůstane v kapse.</p><div class="lxg">'+
+      LUX.map(function(o){var sv=(o._orig-o.ppp)*2;return '<article class="lx" data-open="'+o.id+'" tabindex="0"><div class="lxp">'+pic(o,150)+'<span class="lxd mono">−'+o.disc+' %</span></div><div class="lxb">'+
+        '<div class="lxs">'+'★'.repeat(Math.round(o.hotel.stars))+'</div><div class="lxt">'+esc(o.hotel.name)+'</div><div class="lxl">'+esc(place(o))+'</div>'+
+        '<div class="lxf mono">'+esc(AIR_FROM[o.air]||o.air)+' · '+dc(o.dep)+'–'+dc(o.ret)+' · '+nights(o.n)+(o.board?' · '+BOARD[o.board]:'')+'</div>'+
+        '<div class="lxo">ceník cestovky pro dva <s class="num">'+kc(o._orig*2)+'</s></div><div class="lxn num">'+kc(o.ppp*2)+' <small>za dva</small></div>'+
+        '<div class="lxsv">Zůstane ti '+kc(sv)+'</div></div></article>';}).join('')+'</div></div>';
+  } else $('luxus').hidden=true;
 
   // ---------------------------------------------------------- kam to bude
   var REL={

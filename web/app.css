@@ -513,3 +513,65 @@ footer nav{display:flex;gap:16px;flex-wrap:wrap}
 .vyp .search{margin-top:14px}
 .vchip{font-size:12px;color:var(--mute);margin:12px 0 0}
 @media (max-width:760px){.cg{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}.cy{scroll-snap-align:start}.nchips{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding-bottom:4px}.nchips button{flex:none}}
+
+/* ===== Letenky jako seznam ===== */
+.lr-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin-top:22px}
+.lr{display:grid;grid-template-columns:64px minmax(0,1fr) auto;gap:12px;align-items:start;background:#151821;border:1px solid #262a36;border-radius:16px;padding:14px;cursor:pointer;color:#f4efe6;min-width:0}
+.lr:hover{border-color:#ff7a1f}
+.lr.biz{background:linear-gradient(160deg,#1f1c18,#2b2520);border-color:#6b5532}
+.lr-code{font-size:22px;font-weight:800;color:#ffb347;letter-spacing:.02em;padding-top:2px}
+.lr.biz .lr-code{color:#e6b45a}
+.lr-b{min-width:0;display:flex;flex-direction:column;gap:3px}
+.lr-t{font-family:var(--display);font-weight:800;font-size:20px;letter-spacing:-.02em;line-height:1.1}
+.lr-t span{font-family:var(--body);font-size:13px;font-weight:600;color:#9f988e}
+.lr-biz{font-style:normal;font-size:10px;letter-spacing:.14em;color:#e6b45a;border:1px solid #6b5532;border-radius:5px;padding:1px 5px;vertical-align:3px}
+.lr-f{font-size:11.5px;color:#c9c2b8}
+.lr-f b{color:#ffb347;font-weight:800}.lr-f b.ok{color:#7fe0a0}
+.lr-o{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;align-items:center}
+.lr-o button{border:1px solid #333847;background:#0f1118;color:#e8e2d8;border-radius:8px;padding:4px 8px;font-family:var(--mono);font-size:11px}
+.lr-o button b{color:#fff}
+.lr-o span{font-family:var(--mono);font-size:11px;color:#9f988e}
+.lr-p{text-align:right;display:flex;flex-direction:column;align-items:flex-end}
+.lr-p b{font-family:var(--display);font-weight:800;font-size:22px;color:#ff8a3d;line-height:1;white-space:nowrap}
+.lr.biz .lr-p b{color:#f1c46b}
+.lr-p small{font-size:11px;color:#9f988e;margin-top:3px}
+.lr-p em{font-style:normal;font-family:var(--mono);font-size:10.5px;font-weight:800;color:#7fe0a0;margin-top:6px;white-space:nowrap}
+@media (max-width:760px){.lr-list{grid-template-columns:1fr}.lr{grid-template-columns:48px minmax(0,1fr)}.lr-code{font-size:16px}.lr-p{grid-column:2;flex-direction:row;align-items:baseline;gap:8px;justify-content:flex-start;flex-wrap:wrap}.lr-p em{margin:0}}
+
+/* ===== Útěk ze zimy ===== */
+.zima{background:linear-gradient(180deg,#fff4e2,#fff9f1);padding-block:34px 26px;color:#1d1a17}
+.zima h2,.lux2 h2{font-family:var(--display);font-weight:800;font-size:clamp(28px,4.6vw,46px);letter-spacing:-.035em;line-height:1;margin:6px 0 0}
+.zima .lead{color:#5b524a}
+.zchips{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:16px 0 4px;padding-bottom:4px}
+.zchips button{flex:none;border:1.5px solid #1d1a17;background:transparent;color:#1d1a17;border-radius:999px;padding:8px 15px;font-weight:700;font-size:14px}
+.zchips button[aria-pressed="true"]{background:#1d1a17;color:#fff4e2}
+.zl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:28px}
+.zl .tn{display:none}.zl .tr{grid-template-columns:minmax(0,1fr) auto;border-color:#eadcc6}
+.zl .tf,.zl .th{color:#5b524a}
+.zt{color:#d4570f;font-weight:800;white-space:nowrap}
+@media (max-width:760px){.zl{grid-template-columns:1fr}.zl .tp{grid-column:1}}
+.zima{--ink:#1d1a17;--ink-2:#5b524a;--mute:#8a7d70;--line:#eadcc6;--surface:#fff;--bg:#fff9f1;--orange:#f2621f}
+
+/* ===== Luxus ve slevě ===== */
+.lux2{background:#0f0e0c;color:#f6ead7;padding-block:38px 40px}
+.lux2 .eyebrow{color:#e6b45a}
+.lux2 .lead{color:#b9ab95}
+.lxg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:20px}
+.lx{background:#1a1815;border:1px solid #3a3226;border-radius:18px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;min-width:0}
+.lx:hover{border-color:#e6b45a}
+.lxp{position:relative;height:150px;background:#24201b}
+.lxp img,.lxp svg{width:100%;height:100%;object-fit:cover;display:block}
+.lxd{position:absolute;left:10px;top:10px;background:#e6b45a;color:#1a1408;font-weight:800;font-size:12px;padding:3px 8px;border-radius:6px}
+.lxb{padding:12px 14px 14px;display:flex;flex-direction:column;gap:3px;flex:1}
+.lxs{color:#e6b45a;font-size:12px;letter-spacing:1px}
+.lxt{font-family:var(--display);font-weight:800;font-size:18px;line-height:1.15;letter-spacing:-.015em}
+.lxl{font-size:13px;color:#b9ab95}
+.lxf{font-size:11px;color:#b9ab95;margin-top:2px}
+.lxo{font-size:12px;color:#8f846f;margin-top:8px}
+.lxo s{color:#b9ab95}
+.lxn{font-family:var(--display);font-weight:800;font-size:28px;color:#f1c46b;line-height:1}
+.lxn small{font-family:var(--body);font-size:12px;color:#b9ab95;font-weight:600}
+.lxsv{margin-top:6px;align-self:flex-start;font-weight:800;font-size:13px;background:#2a2418;color:#f1c46b;border-radius:8px;padding:4px 8px}
+@media (max-width:760px){.lxg{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:80%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px}.lx{scroll-snap-align:start}}
+.zl .zx{display:none}.zl.open .zx{display:grid}
+.zmore{grid-column:1/-1;justify-self:start;margin-top:14px;color:#1d1a17;border-color:#d9c7ab}
