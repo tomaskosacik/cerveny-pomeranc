@@ -287,6 +287,7 @@ function ensureSub(opts){
 }
 if(PUSH_ID&&pushSupported()) navigator.serviceWorker.register('/sw.js').catch(function(){});
 if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
+if(window.caches) caches.open('cp-seen').then(function(c){return c.delete('/__badge');}).catch(function(){});
 function isWatched(gid){return WATCH.indexOf(gid)>=0;}
 function toggleWatch(o,btn){
   var gid=o.hotel&&o.hotel.gid; if(!gid) return;

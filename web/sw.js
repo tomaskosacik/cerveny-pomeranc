@@ -28,7 +28,13 @@ self.addEventListener('push', (e) => {
       });
     }
     if (!shown) await self.registration.showNotification('Červený pomeranč', { body: 'Máme nové ceny zájezdů.', tag: 'obecne', icon: '/icon-192.png', data: { url: '/' } });
-    if (badge && self.navigator && 'setAppBadge' in self.navigator) { try { await self.navigator.setAppBadge(badge); } catch (err) {} }
+    if (!badge) badge = 1;
+    // číslo na ikoně se sčítá, dokud uživatel aplikaci neotevře
+    try {
+      const prev = await seen.match('/__badge'); const total = Math.min(99, (prev ? +(await prev.text()) || 0 : 0) + badge);
+      await seen.put('/__badge', new Response(String(total)));
+      if (self.navigator && 'setAppBadge' in self.navigator) await self.navigator.setAppBadge(total);
+    } catch (err) {}
   })());
 });
 
