@@ -334,21 +334,22 @@ function showInstall(why){
   else if(mode==='android') body='<ol class="isteps"><li>Klepni vpravo nahoře na <b>⋮</b></li><li>Vyber <b>Přidat na plochu</b> nebo <b>Instalovat aplikaci</b></li></ol>';
   else if(mode==='inapp-android') body='<p class="inote">Teď jsi v prohlížeči Facebooku nebo Instagramu, odsud na plochu přidat nejde.</p><button type="button" class="btn or ibtn" data-i="chrome">Otevřít v Chrome</button><p class="inote">Nebo klepni na <b>⋮</b> vpravo nahoře → <b>Otevřít v prohlížeči</b>.</p>';
   else if(mode==='inapp-ios') body='<p class="inote">Teď jsi v prohlížeči Facebooku nebo Instagramu, odsud na plochu přidat nejde.</p><button type="button" class="btn or ibtn" data-i="safari">Otevřít v Safari</button><p class="inote">Nebo klepni na <b>•••</b> vpravo nahoře → <b>Otevřít v prohlížeči</b>.</p>';
-  el.innerHTML=head+body;
+  el.innerHTML=head+body+(mode==='ios'||mode==='android'?'<button type="button" class="btn ghost ibtn" data-i="have" style="margin-top:10px;padding:10px">Už ho na ploše mám</button>':'');
   document.body.appendChild(el);
   requestAnimationFrame(function(){el.classList.add('on');});
   el.addEventListener('click',function(e){
     if(e.target.closest('.ix')){lsSet('cp_inst_dismiss',Date.now());hideInstall();return;}
     var b=e.target.closest('[data-i]');if(!b)return;var a=b.getAttribute('data-i');
     if(a==='prompt'&&INST.prompt){INST.prompt.prompt();INST.prompt.userChoice.then(function(r){if(r.outcome==='accepted')hideInstall();INST.prompt=null;});}
+    if(a==='have'){lsSet('cp_installed','1');hideInstall();toast('Super! Otevírej Pomeranč z ikony na ploše 🍊');return;}
     if(a==='chrome') location.href='intent://'+location.host+location.pathname+location.search+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(location.href)+';end';
     if(a==='safari') location.href='x-safari-'+location.href;
   });
 }
 function autoInstall(){
   if(IS_APP||!IS_MOBILE||lsGet('cp_installed')) return;
-  var d=+lsGet('cp_inst_dismiss')||0; if(Date.now()-d<20*3600e3) return;
-  var done=false;function go(){if(done)return;done=true;window.removeEventListener('scroll',onS);showInstall('auto');}
+  var d=+lsGet('cp_inst_dismiss')||0; if(Date.now()-d<3*86400e3) return;
+  var done=false;function go(){if(done)return;done=true;lsSet('cp_inst_dismiss',Date.now());window.removeEventListener('scroll',onS);showInstall('auto');}
   function onS(){if(window.scrollY>900)go();}
   window.addEventListener('scroll',onS,{passive:true});
   setTimeout(go,IN_APP?4000:9000);
