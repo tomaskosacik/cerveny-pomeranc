@@ -2,7 +2,7 @@
 <html lang="cs"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow"><title>Přehled · Červený pomeranč</title>
-<link rel="icon" href="/icon-192.png?v=2"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
+<link rel="icon" href="/icon-192.png?v=2"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Přehled"><link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <style>
 :root{--bg:#f6f3ee;--card:#fff;--ink:#17140f;--ink2:#5c554c;--mute:#958c80;--line:#e7e0d5;--or:#f2621f;--or2:#ffd9c2;--gr:#1f9d55;--bl:#2f6fd6}
 @media (prefers-color-scheme:dark){:root{--bg:#121110;--card:#1c1a18;--ink:#f3efe7;--ink2:#c9c1b5;--mute:#8d857a;--line:#2e2a26;--or2:#5a2a12}}
@@ -50,7 +50,8 @@ tr:last-child td{border-bottom:0}.bar{height:6px;background:var(--or2);border-ra
 <script>
 (function(){
 var $=function(i){return document.getElementById(i)};
-var KEY=null;try{var m=location.hash.match(/k=([\w-]+)/);if(m){KEY=m[1];localStorage.setItem('cp_prehled',KEY);history.replaceState(null,'',location.pathname);}else KEY=localStorage.getItem('cp_prehled');}catch(e){}
+var KEY=null;try{var m=location.hash.match(/k=([\w-]+)/);if(m){KEY=m[1];localStorage.setItem('cp_prehled',KEY);}else KEY=localStorage.getItem('cp_prehled');}catch(e){}
+if(KEY&&!/k=/.test(location.hash))history.replaceState(null,'',location.pathname+'#k='+KEY);
 if(!KEY){$('login').hidden=false;$('gen').textContent='';return;}
 var R=1,D=null,M=null,F=null;
 function fmt(n){return (Math.round(n||0)).toLocaleString('cs-CZ');}
