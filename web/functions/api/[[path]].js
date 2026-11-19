@@ -181,6 +181,69 @@ async function notify(env, req) {
   return { done: run.done, sent: run.sent, gone: run.gone, daily: run.daily, flash: run.flash };
 }
 
+// ------------------------------------------------------------ vlastní měření (D1 databáze STATS)
+// Bez cookies: návštěvník = otisk z IP + prohlížeče + dne (sůl), nikdy se neukládá IP ani nic osobního.
+let STATS_READY = false;
+async function statsDb(env) {
+  if (!env.STATS) return null;
+  if (!STATS_READY) {
+    await env.STATS.batch([
+      env.STATS.prepare('CREATE TABLE IF NOT EXISTS ev (ts INTEGER, day TEXT, uid TEXT, ev TEXT, app INTEGER, src TEXT, k TEXT, x TEXT, v INTEGER, ctry TEXT)'),
+      env.STATS.prepare('CREATE INDEX IF NOT EXISTS ev_day ON ev(day, ev)'),
+    ]);
+    STATS_READY = true;
+  }
+  return env.STATS;
+}
+const EVS = new Set(['view', 'detail', 'click', 'inst_show', 'inst_ok', 'push_on', 'app_first', 'search', 'share', 'watch']);
+const cut = (v, n) => (v == null ? null : String(v).slice(0, n));
+async function logEvents(env, req, body) {
+  const db = await statsDb(env); if (!db) return;
+  const ua = req.headers.get('user-agent') || '';
+  if (/bot|crawl|spider|preview|headless|lighthouse/i.test(ua)) return;
+  const day = pragueNow().day, salt = (await vapid(env)).pub.slice(0, 12);
+  const uid = (await sha((req.headers.get('cf-connecting-ip') || '') + '|' + ua + '|' + day + '|' + salt)).slice(0, 16);
+  const ctry = (req.cf && req.cf.country) || null, now = Date.now();
+  const list = (Array.isArray(body.e) ? body.e : [body]).slice(0, 10).filter((e) => e && EVS.has(e.ev));
+  if (!list.length) return;
+  const st = db.prepare('INSERT INTO ev (ts,day,uid,ev,app,src,k,x,v,ctry) VALUES (?,?,?,?,?,?,?,?,?,?)');
+  await db.batch(list.map((e) => st.bind(now, day, uid, e.ev, e.app ? 1 : 0, cut(e.src, 60), cut(e.k, 60), cut(e.x, 80), Number.isFinite(+e.v) ? Math.round(+e.v) : null, ctry)));
+}
+async function prehled(env) {
+  const db = await statsDb(env);
+  const d0 = new Date(Date.now() - 29 * 864e5).toLocaleDateString('sv-SE', { timeZone: 'Europe/Prague' });
+  const out = { gen: new Date().toISOString(), db: !!db };
+  if (db) {
+    const q = (sql, ...a) => db.prepare(sql).bind(...a).all().then((r) => r.results);
+    [out.days, out.appDays, out.src, out.clicksBy, out.topDest, out.ctry, out.inst] = await Promise.all([
+      q("SELECT day, ev, COUNT(*) n, COUNT(DISTINCT uid) u, SUM(v) v FROM ev WHERE day >= ? GROUP BY day, ev ORDER BY day", d0),
+      q("SELECT day, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND app = 1 GROUP BY day", d0),
+      q("SELECT COALESCE(src,'přímo') src, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev = 'view' GROUP BY 1 ORDER BY 2 DESC LIMIT 12", d0),
+      q("SELECT COALESCE(k,'?') k, COUNT(*) n, SUM(v) v FROM ev WHERE day >= ? AND ev = 'click' GROUP BY 1 ORDER BY 2 DESC", d0),
+      q("SELECT x, COUNT(*) n FROM ev WHERE day >= ? AND ev IN ('detail','click') AND x IS NOT NULL GROUP BY x ORDER BY 2 DESC LIMIT 12", d0),
+      q("SELECT COALESCE(ctry,'?') c, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev = 'view' GROUP BY 1 ORDER BY 2 DESC LIMIT 8", d0),
+      q("SELECT COALESCE(k,'?') k, ev, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev IN ('inst_show','inst_ok') GROUP BY 1,2", d0),
+    ]);
+  }
+  // odběratelé upozornění
+  const subs = { total: 0, daily: 0, watching: 0, watches: 0, air: {}, new7: 0 };
+  let cursor;
+  do {
+    const l = await env.PUSH.list({ prefix: 'sub:', cursor, limit: 1000 });
+    for (const k of l.keys.slice(0, 1000)) {
+      const s = await env.PUSH.get(k.name, 'json'); if (!s) continue;
+      subs.total++; if (s.daily !== false) subs.daily++;
+      if (s.watch && s.watch.length) { subs.watching++; subs.watches += s.watch.length; }
+      const a = s.air || 'kdekoli'; subs.air[a] = (subs.air[a] || 0) + 1;
+      if (s.created && Date.now() - s.created < 7 * 864e5) subs.new7++;
+    }
+    cursor = l.list_complete || subs.total >= 3000 ? null : l.cursor;
+  } while (cursor);
+  out.subs = subs;
+  out.notify = await env.PUSH.get('notify:state', 'json').then((x) => x && { lastRun: x.run, dailyDay: x.dailyDay, flashRecent: (x.flashRecent || []).length }).catch(() => null);
+  return out;
+}
+
 // ------------------------------------------------------------ router
 export async function onRequest(ctx) {
   const { request: req, env } = ctx;
@@ -233,6 +296,19 @@ export async function onRequest(ctx) {
         return J({ msgs });
       }
       case 'notify': return J(await notify(env, req));
+      case 'e': { try { await logEvents(env, req, body); } catch (e) {} return new Response(null, { status: 204 }); }
+      case 'prehled-klic': {
+        // jednorázově vydá klíč k přehledu; podruhé už ne
+        if (await env.PUSH.get('prehled:key')) return J({ error: 'klíč už byl vydán' }, 403);
+        const key = b64u(crypto.getRandomValues(new Uint8Array(15)));
+        await env.PUSH.put('prehled:key', key);
+        return J({ key });
+      }
+      case 'prehled': {
+        const key = await env.PUSH.get('prehled:key');
+        if (!key || req.headers.get('x-key') !== key) return J({ error: 'špatný klíč' }, 403);
+        return J(await prehled(env));
+      }
       case 'stats': {
         const ck = new Request(new URL('/api/stats', req.url)), cache = caches.default;
         const hit = await cache.match(ck); if (hit) return hit;

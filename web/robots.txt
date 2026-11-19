@@ -1,2 +1,4 @@
 User-agent: *
 Allow: /
+Disallow: /prehled.html
+Disallow: /api/

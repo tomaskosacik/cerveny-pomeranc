@@ -266,6 +266,16 @@ try{PUSH_ID=localStorage.getItem('cp_push_id');WATCH=JSON.parse(localStorage.get
 function saveWatch(){try{localStorage.setItem('cp_watch',JSON.stringify(WATCH))}catch(e){}}
 var IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
 var IS_APP=window.matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+// vlastní anonymní měření (bez cookies) -> /api/e
+var EVQ=[],EVT=null;
+function cpEv(ev,o){o=o||{};o.ev=ev;o.app=IS_APP?1:0;EVQ.push(o);clearTimeout(EVT);EVT=setTimeout(evFlush,400);}
+function evFlush(){if(!EVQ.length)return;var b=JSON.stringify({e:EVQ.splice(0,10)});try{if(!(navigator.sendBeacon&&navigator.sendBeacon('/api/e',b)))fetch('/api/e',{method:'POST',body:b,keepalive:true}).catch(function(){});}catch(e){}if(EVQ.length)evFlush();}
+window.addEventListener('pagehide',evFlush);
+(function(){var p=new URLSearchParams(location.search),src=p.get('utm_source')?p.get('utm_source')+(p.get('utm_campaign')?'/'+p.get('utm_campaign'):''):null;
+  if(!src&&document.referrer){try{var h=new URL(document.referrer).hostname.replace(/^www\./,'');if(h&&h.indexOf('cervenypomeranc')<0)src=h;}catch(e){}}
+  if(!src&&/FBAN|FBAV|FB_IAB/.test(navigator.userAgent))src='facebook (aplikace)';if(!src&&/Instagram/.test(navigator.userAgent))src='instagram (aplikace)';
+  if(!src&&IS_APP)src='ikona na ploše';
+  cpEv('view',{src:src,k:location.pathname});})();
 function pushSupported(){return 'serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;}
 function b64uToU8(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var r=atob(s),a=new Uint8Array(r.length);for(var i=0;i<r.length;i++)a[i]=r.charCodeAt(i);return a;}
 function api(path,body){return fetch('/api/'+path,body?{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify(body)}:{cache:'no-store'}).then(function(r){return r.json().then(function(j){if(!r.ok)throw new Error(j.error||r.status);return j;});});}
@@ -284,7 +294,7 @@ function ensureSub(opts){
     .then(function(){return reg.pushManager.getSubscription();})
     .then(function(s){return s||api('vapid').then(function(k){return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uToU8(k.key)});});})
     .then(function(s){var b={sub:s.toJSON()};if(opts&&'air' in opts)b.air=opts.air;if(opts&&'daily' in opts)b.daily=opts.daily;return api('subscribe',b);})
-    .then(function(j){var nw=!PUSH_ID;PUSH_ID=j.id;try{localStorage.setItem('cp_push_id',j.id)}catch(e){}if(nw&&window.cpTrack)cpTrack('Subscribe',{content_name:'push'});return j;});
+    .then(function(j){var nw=!PUSH_ID;PUSH_ID=j.id;try{localStorage.setItem('cp_push_id',j.id)}catch(e){}if(nw&&window.cpTrack)cpTrack('Subscribe',{content_name:'push'});if(nw)cpEv('push_on',{k:opts&&opts.daily?'ranni':'hlidac'});return j;});
 }
 if(PUSH_ID&&pushSupported()) navigator.serviceWorker.register('/sw.js').catch(function(){});
 if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
@@ -312,7 +322,7 @@ var IN_APP=/FBAN|FBAV|FB_IAB|FBIOS|Instagram|TikTok|musical_ly|Bytedance|Line\//
 var IS_ANDROID=/Android/i.test(navigator.userAgent);
 var IS_MOBILE=IS_IOS||IS_ANDROID;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();INST.prompt=e;});
-window.addEventListener('appinstalled',function(){if(window.cpTrack)cpTrack('PridaniNaPlochu');try{localStorage.setItem('cp_installed','1')}catch(e){}hideInstall();toast('Hotovo, Pomeranč je na ploše 🍊');});
+window.addEventListener('appinstalled',function(){cpEv('inst_ok',{k:'appinstalled'});if(window.cpTrack)cpTrack('PridaniNaPlochu');try{localStorage.setItem('cp_installed','1')}catch(e){}hideInstall();toast('Hotovo, Pomeranč je na ploše 🍊');});
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function installMode(){
@@ -328,6 +338,7 @@ var PLUS_ICO='<span style="display:inline-grid;place-items:center;width:20px;hei
 function hideInstall(){var el=document.getElementById('isheet');if(el)el.remove();}
 function showInstall(why){
   var mode=installMode();
+  if(mode) cpEv('inst_show',{k:mode,src:why});
   if(!mode){ if(why==='manual') toast(IS_APP?'Pomeranč už máš na ploše 🍊':'Na počítači stačí záložka. Na plochu si Pomeranč přidej v mobilu.'); return; }
   hideInstall();
   var el=document.createElement('div');el.id='isheet';el.className='isheet'+(mode==='ios'?' ios':'');el.setAttribute('role','dialog');el.setAttribute('aria-label','Přidat Pomeranč na plochu');
@@ -344,7 +355,7 @@ function showInstall(why){
   el.addEventListener('click',function(e){
     if(e.target.closest('.ix')){lsSet('cp_inst_dismiss',Date.now());hideInstall();return;}
     var b=e.target.closest('[data-i]');if(!b)return;var a=b.getAttribute('data-i');
-    if(a==='prompt'&&INST.prompt){INST.prompt.prompt();INST.prompt.userChoice.then(function(r){if(r.outcome==='accepted')hideInstall();INST.prompt=null;});}
+    if(a==='prompt'&&INST.prompt){INST.prompt.prompt();INST.prompt.userChoice.then(function(r){if(r.outcome==='accepted'){hideInstall();cpEv('inst_ok',{k:'prompt'});}INST.prompt=null;});}
     if(a==='have'){lsSet('cp_installed','1');hideInstall();toast('Super! Otevírej Pomeranč z ikony na ploše 🍊');return;}
     if(a==='chrome') location.href='intent://'+location.host+location.pathname+location.search+'#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='+encodeURIComponent(location.href)+';end';
     if(a==='safari') location.href='x-safari-'+location.href;
@@ -360,7 +371,7 @@ function autoInstall(){
 }
 // první spuštění z plochy: poděkovat a nabídnout ranní poklady
 function welcomeApp(){
-  if(!IS_APP||lsGet('cp_app_welcome')) return; lsSet('cp_app_welcome','1'); lsSet('cp_installed','1');if(window.cpTrack)cpTrack('PrvniSpusteniZPlochy');
+  if(!IS_APP||lsGet('cp_app_welcome')) return; lsSet('cp_app_welcome','1'); lsSet('cp_installed','1');if(window.cpTrack)cpTrack('PrvniSpusteniZPlochy');cpEv('app_first');
   if(!pushSupported()||PUSH_ID) return;
   var el=document.createElement('div');el.id='isheet';el.className='isheet';
   el.innerHTML='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Vítej v Pomeranči 🍊</b><span>Chceš vědět, když něco výrazně zlevní? Ráno souhrn, přes den jen opravdové poklady.</span></div></div><button type="button" class="btn or ibtn" data-i="push">☀ Zapnout ranní poklady</button>';
@@ -505,6 +516,7 @@ function route(o){if(!o.d.fly||!AIR[o.air])return '';return '<div class="dsec ro
 function kv(pairs){return '<div class="kv">'+pairs.map(function(p){return '<div><span>'+p[0]+'</span><b>'+p[1]+'</b></div>';}).join('')+'</div>';}
 function openOffer(id,noHash){
   var o=byId(id); if(!o)return;
+  cpEv('detail',{k:o.type,x:o.d?o.d.ctry:'',v:o.ppp});
   var pax=+(($('fPax')||{}).value||2), ad=pax>=3?2:pax, kids=Math.max(0,pax-2);
   var total=o.type==='hotel'?o.ppp*o.n:o.ppp*ad+(o.type==='flight'?o.ppp*kids:Math.round(o.ppp*.45)*kids);
   var paxTxt=o.type==='hotel'?nights(o.n)+' (pokoj)':ad+(ad===1?' dospělého':' dospělé')+(kids?' + '+kids+(kids===1?' dítě':' děti'):'');
@@ -542,7 +554,8 @@ function openOffer(id,noHash){
   if(!noHash){try{history.replaceState(null,'','#nabidka-'+o.id)}catch(e){}}
   if(!DEMO&&o.type==='package') enrich(o);
   if($('watchBtn')) $('watchBtn').addEventListener('click',function(){toggleWatch(o,this);});
-  $('shareBtn').addEventListener('click',function(){var u=location.href.split('#')[0]+'#nabidka-'+o.id;if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){toast('Odkaz zkopírován')},function(){toast(u)});else toast(u);});
+  $('dGo').addEventListener('click',function(){cpEv('click',{k:o.partner?PARTNER[o.partner]:'?',x:o.d?o.d.ctry:'',v:o.ppp,src:o.type});evFlush();});
+  $('shareBtn').addEventListener('click',function(){cpEv('share',{x:o.d?o.d.ctry:''});var u=location.href.split('#')[0]+'#nabidka-'+o.id;if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){toast('Odkaz zkopírován')},function(){toast(u)});else toast(u);});
 }
 function enrich(o){
   detailFile(o.file).then(function(D){
@@ -771,6 +784,7 @@ function home(){
   $('kchips').innerHTML=KCH.map(function(c){return '<button type="button" data-k="'+esc(c)+'"><b>'+esc(nick(c))+'</b><span class="mono">od '+kc(CM[c].min)+'</span></button>';}).join('');
   var KQ=null;
   function kam(q,scroll){
+    if(q&&q.trim())cpEv('search',{x:q.trim().slice(0,40)});
     var n=norm(q.trim());KQ=q;
     if(!n){$('kout').innerHTML='';return;}
     var hit=P.filter(function(o){return norm(o.d.city+' '+o.d.ctry+' '+nick(o.d.ctry)+' '+o.hotel.name).indexOf(n)>=0;});
