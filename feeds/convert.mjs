@@ -375,12 +375,14 @@ async function flights() {
   // Kiwi.com (česky, Kč, 3 % provize): partnerský odkaz si necháme vyrobit přes API, ať máme správné parametry programu
   let KIWI = null;
   if (TOKEN && TP.kiwi !== false) {
-    try {
+    for (let a = 1; a <= 8 && !KIWI; a++) try {
+      if (a > 1) await sleep(4000);
       const r = await fetch('https://api.travelpayouts.com/links/v1/create', { method: 'POST', headers: { 'X-Access-Token': TOKEN, 'Content-Type': 'application/json' },
         body: JSON.stringify({ trs: +TP.trs, marker: +TP.marker, shorten: false, links: [{ url: 'https://www.kiwi.com/deep?from=PRG&to=BKK&lang=cz&currency=CZK' }] }) });
       const j = await r.json(); const pu = j?.result?.links?.[0]?.partner_url || '';
       if (/^https:\/\/tp\.media\/r\?/.test(pu)) { const u = new URL(pu); u.searchParams.delete('u'); KIWI = u.toString() + '&u='; log.push('kiwi odkazy: ' + KIWI); }
-      else log.push('kiwi odkazy: nepodařilo se (' + JSON.stringify(j).slice(0, 200) + ') – zůstává Aviasales');
+      else if (pu) { log.push('kiwi odkazy: neznámý tvar ' + pu + ' – zůstává Aviasales'); break; }
+      else if (a === 8) log.push('kiwi odkazy: nepodařilo se (' + JSON.stringify(j).slice(0, 200) + ') – zůstává Aviasales');
     } catch (e) { log.push('kiwi odkazy: CHYBA ' + e.message + ' – zůstává Aviasales'); }
   }
   const RUNS = ORIGINS.map((o) => [o, 0]).concat((TP.business || ['PRG', 'VIE', 'BUD']).map((o) => [o, 1]));
