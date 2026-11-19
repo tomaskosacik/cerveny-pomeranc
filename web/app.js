@@ -284,7 +284,7 @@ function ensureSub(opts){
     .then(function(){return reg.pushManager.getSubscription();})
     .then(function(s){return s||api('vapid').then(function(k){return reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64uToU8(k.key)});});})
     .then(function(s){var b={sub:s.toJSON()};if(opts&&'air' in opts)b.air=opts.air;if(opts&&'daily' in opts)b.daily=opts.daily;return api('subscribe',b);})
-    .then(function(j){PUSH_ID=j.id;try{localStorage.setItem('cp_push_id',j.id)}catch(e){}return j;});
+    .then(function(j){var nw=!PUSH_ID;PUSH_ID=j.id;try{localStorage.setItem('cp_push_id',j.id)}catch(e){}if(nw&&window.cpTrack)cpTrack('Subscribe',{content_name:'push'});return j;});
 }
 if(PUSH_ID&&pushSupported()) navigator.serviceWorker.register('/sw.js').catch(function(){});
 if(navigator.clearAppBadge) navigator.clearAppBadge().catch(function(){});
@@ -312,7 +312,7 @@ var IN_APP=/FBAN|FBAV|FB_IAB|FBIOS|Instagram|TikTok|musical_ly|Bytedance|Line\//
 var IS_ANDROID=/Android/i.test(navigator.userAgent);
 var IS_MOBILE=IS_IOS||IS_ANDROID;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();INST.prompt=e;});
-window.addEventListener('appinstalled',function(){try{localStorage.setItem('cp_installed','1')}catch(e){}hideInstall();toast('Hotovo, Pomeranč je na ploše 🍊');});
+window.addEventListener('appinstalled',function(){if(window.cpTrack)cpTrack('PridaniNaPlochu');try{localStorage.setItem('cp_installed','1')}catch(e){}hideInstall();toast('Hotovo, Pomeranč je na ploše 🍊');});
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 function installMode(){
@@ -360,7 +360,7 @@ function autoInstall(){
 }
 // první spuštění z plochy: poděkovat a nabídnout ranní poklady
 function welcomeApp(){
-  if(!IS_APP||lsGet('cp_app_welcome')) return; lsSet('cp_app_welcome','1'); lsSet('cp_installed','1');
+  if(!IS_APP||lsGet('cp_app_welcome')) return; lsSet('cp_app_welcome','1'); lsSet('cp_installed','1');if(window.cpTrack)cpTrack('PrvniSpusteniZPlochy');
   if(!pushSupported()||PUSH_ID) return;
   var el=document.createElement('div');el.id='isheet';el.className='isheet';
   el.innerHTML='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Vítej v Pomeranči 🍊</b><span>Chceš každé ráno vědět, co zlevnilo? Pošleme jedno upozornění denně kolem osmé.</span></div></div><button type="button" class="btn or ibtn" data-i="push">☀ Zapnout ranní poklady</button>';
