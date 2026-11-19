@@ -243,6 +243,7 @@ PARTNER.a='Aviasales';
 function fromFlights(F,J){
   var gen=new Date(J.gen);
   F.f.forEach(function(r){
+    if(r[13]?(r[11]||0)<1500:(r[11]||0)<2500) return;
     var dep=new Date(r[4]+'T00:00:00'), ret=new Date(r[5]+'T00:00:00'), days=Math.max(1,Math.round((ret-dep)/864e5));
     var base=DEST[CTRY[r[3]]]||EXTRA[r[3]]||{};
     var d={k:'f-'+r[1],city:r[2],ctry:r[3]||r[2],iata:r[1],fly:r[11]?Math.round((r[11]/780+.6)*10)/10:0,km:r[11]||0,sea:base.sea||null,temps:base.temps||[],sky:base.sky||['#e3efff','#9cbcf0','#26446f'],hint:base.hint||'',car:false};
@@ -517,6 +518,7 @@ function openOffer(id,noHash){
   else if(o.type==='combo') h+=kv([['Termín',ds(o.dep)+' – '+ds(o.ret)],['Délka',nights(o.n)],['Odlet',AIR[o.air]],['V ceně',esc(o.what)],['Index',o.idx+' / 100']]);
   else h+=kv([['Termín',ds(o.dep)+' – '+ds(o.ret)],['Délka',nights(o.n)],['Strava',BOARD[o.board]],['Odlet',AIR[o.air]||o.air],['Hodnocení',o.hotel.rating?String(o.hotel.rating).replace('.',',')+'/10':'–'],['K pláži',o.hotel.beach==null?'–':o.hotel.beach===0?'na pláži':o.hotel.beach+' m'],['Vzduch',temp||'–'],['Moře',o.d.sea?'~'+o.d.sea+' °C':'–'],['Prodává',o.partner?PARTNER[o.partner]:'–'],['Index',o.idx+' / 100']]);
   if(o.type!=='hotel') h+=route(o);
+  if(o.type==='flight'){var oth=ITEMS.filter(function(x){return x.type==='flight'&&x!==o&&x.d.iata===o.d.iata&&x.cls===o.cls}).sort(function(a,b){return a.ppp-b.ppp}).slice(0,8);if(oth.length)h+='<div class="dsec"><h4>Další termíny do '+esc(o.d.city)+'</h4><div class="alt">'+oth.map(function(x){return '<div data-open="'+x.id+'" style="cursor:pointer"><span>'+AIR_FROM[x.air]+' · '+ds(x.dep)+' – '+ds(x.ret)+(x.direct?' · přímý':'')+'</span><b class="num">'+kc(x.ppp)+'</b></div>';}).join('')+'</div></div>';}
   if(o.type==='flight') h+='<div class="dsec"><h4>Běžná cena trasy</h4><div class="alt"><div class="best"><span>Tahle letenka</span><b class="num">'+kc(o.ppp)+'</b></div><div><span>Obvykle zpáteční</span><b class="num">'+kc(o.typical)+'</b></div></div></div>';
   if(o.type==='package'){
     var sib=byHotel[o.d.k+'|'+o.hotel.name]||[];
@@ -592,6 +594,44 @@ document.addEventListener('click',function(e){if(e.target.closest('[data-install
 var mh=location.hash.match(/^#nabidka-(\d+)$/);if(mh)openOffer(mh[1],true);
 var hh=location.hash.match(/^#hotel-(.+)$/);if(hh){var hg=decodeURIComponent(hh[1]),cand=ITEMS.filter(function(o){return o.hotel&&o.hotel.gid===hg}).sort(function(a,b){return a.ppp-b.ppp})[0];if(cand)openOffer(cand.id);}
 
+function letenkovePoklady(){
+  var FL=ITEMS.filter(function(o){return o.type==='flight'});
+  var slot=$('lp-slot'); if(!slot||!FL.length) return;
+  var REG={asie:/Thajsko|Vietnam|Indonésie|Malajsie|Singapur|Japonsko|Korea|Čína|Hongkong|Srí Lanka|Maledivy|Indie|Filipíny|Kambodža|Nepál|Tchaj/,arabie:/Emiráty|Katar|Omán|Saúdská|Bahrajn|Jordánsko|Kuvajt/,amerika:/Spojené státy|Kanada|Mexiko|Kuba|Dominik|Brazílie|Argentina|Kolumbie|Peru|Chile|Kostarika|Panama|Jamajka|Portoriko/,afrika:/Tanzanie|Zanzibar|Keňa|Jihoafrická|Mauricius|Seychely|Kapverdy|Madagaskar|Egypt|Maroko|Réunion|Kanárské|Španělsko|Portugalsko/};
+  var S={reg:'',air:'',cls:0};
+  function region(o){for(var k in REG)if(REG[k].test(o.d.ctry))return k;return 'jine';}
+  function hours(o){return o.d.fly?String(o.d.fly).replace('.',',')+' h':'';}
+  function card(l){
+    var o=l[0], more=l.length-1;
+    return '<article class="bp'+(o.cls?' biz':'')+'" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(AIR[o.air]+' – '+o.d.city+', '+kc(o.ppp))+'">'+
+      '<div class="bp-top"><span>✈ ZPÁTEČNÍ LETENKA</span><span>'+(o.cls?'BUSINESS':'ECONOMY')+'</span></div>'+
+      '<div class="bp-route"><div class="bp-c"><b>'+o.air+'</b><small>'+esc(AIR[o.air]||o.air)+'</small></div><div class="bp-fly"><i></i><span>✈</span><small>'+hours(o)+'</small></div><div class="bp-c r"><b>'+esc(o.d.iata)+'</b><small>'+esc(o.d.city)+'</small></div></div>'+
+      '<div class="bp-meta"><div><small>TAM</small>'+ds(o.dep)+'</div><div><small>ZPĚT</small>'+ds(o.ret)+'</div><div><small>LET</small>'+(o.direct?'přímý':'s přestupem')+'</div></div>'+
+      '<div class="bp-tear" aria-hidden="true"></div>'+
+      '<div class="bp-foot"><div class="bp-price">'+kc(o.ppp)+'<small>'+esc(o.d.ctry)+' · za osobu</small></div><div class="bp-bar" aria-hidden="true"></div></div>'+
+      (more?'<div class="bp-more">+ '+more+' '+(more===1?'další termín':more<5?'další termíny':'dalších termínů')+'</div>':'')+
+    '</article>';
+  }
+  function render(){
+    var l=FL.filter(function(o){return (S.cls?o.cls===1:!o.cls)&&(!S.air||o.air===S.air)&&(!S.reg||region(o)===S.reg)});
+    var g={},keys=[];l.forEach(function(o){var k=o.d.iata;if(!g[k]){g[k]=[];keys.push(k);}g[k].push(o);});
+    keys.forEach(function(k){g[k].sort(function(a,b){return a.ppp-b.ppp});});
+    // nahoru dálky s nejlepší cenou proti obvyklé, pak podle vzdálenosti
+    var DREAM=['BKK','DXB','NYC','DPS','TYO','HKT','MLE','CUN','PUJ','ZNZ','SIN','CMB','SGN','HAN','SEL','MIA','LAX','LAS','SFO','MEX','HAV','RIO','BUE','MRU','SEZ','HKG','KUL','DOH','AUH','MCT','SYD','MEL','CPT','NBO','RAK','TFS','LPA','FNC','KEF','SID','PEK','SHA','MNL','REP','KTM','DEL','GOI','YTO','YVR','BOS','CHI','ORL','LIM','BOG','SJO','AKL','JNB','MBA','DAR','SSH','HRG'];
+    keys=keys.filter(function(k){return !/Kazachstán|Kyrgyzstán|Uzbekistán|Tádžikistán|Turkmenistán|Afghánistán|Pákistán|Irák|Írán|Ázerbájdžán/.test(g[k][0].d.ctry)});
+    keys.sort(function(a,b){var da=DREAM.indexOf(a),db=DREAM.indexOf(b);if(da<0)da=999;if(db<0)db=999;if(da!==db)return da-db;var x=g[a][0],y=g[b][0];return (y.typical-y.ppp)/y.typical-(x.typical-x.ppp)/x.typical||y.d.km-x.d.km;});
+    $('lpGrid').innerHTML=keys.length?keys.slice(0,24).map(function(k){return card(g[k]);}).join(''):'<p class="lp-empty">Na tenhle výběr teď nic nemáme. Zkus jiné letiště.</p>';
+  }
+  var airs=['','PRG','VIE','KTW','BUD','BTS'];
+  slot.outerHTML='<section class="lp" id="letenky" aria-labelledby="lp-h"><div class="wrap">'+
+    '<div class="lp-head"><div class="lp-eye">KAM POLETÍME</div><h2 id="lp-h">Letenkové poklady</h2><p>Daleké lety, kde se letenka opravdu vyplatí. Zpáteční ceny z posledních hodin, odlety z Prahy a okolních letišť. Ubytování si dokoupíš na místě.</p></div>'+
+    '<div class="lp-chips" id="lpReg">'+[['','Všude'],['asie','Asie'],['arabie','Arábie'],['amerika','Amerika'],['afrika','Afrika a ostrovy'],['biz','Business class']].map(function(c,i){return '<button type="button" data-r="'+c[0]+'" aria-pressed="'+(i===0)+'">'+c[1]+'</button>';}).join('')+'</div>'+
+    '<div class="lp-chips small" id="lpAir">'+airs.map(function(a,i){return '<button type="button" data-a="'+a+'" aria-pressed="'+(i===0)+'">'+(a?AIR_FROM[a]:'odkudkoli')+'</button>';}).join('')+'</div>'+
+    '<div class="lp-grid" id="lpGrid"></div></div></section>';
+  $('lpReg').addEventListener('click',function(e){var b=e.target.closest('[data-r]');if(!b)return;var r=b.getAttribute('data-r');S.cls=r==='biz'?1:0;S.reg=r==='biz'?'':r;this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+  $('lpAir').addEventListener('click',function(e){var b=e.target.closest('[data-a]');if(!b)return;S.air=b.getAttribute('data-a');this.querySelectorAll('button').forEach(function(x){x.setAttribute('aria-pressed',x===b)});render();});
+  render();
+}
 function home(){
   // statistiky
   var newC=MAIN.filter(function(o){return o.isNew||o.age<24}).length, dropC=MAIN.filter(function(o){return o.dropPct>=.06}).length;
@@ -688,8 +728,8 @@ function home(){
   }
   var top=function(tag,n){return bestOf(withTag(tag)).sort(function(a,b){return b.idx-a.idx}).slice(0,n||12);};
   var html='';
+  html+='<div id="lp-slot"></div>';
   html+=shelf('vanoce','Vánoce a Silvestr 2026','Ještě volné mezi Vánoci a Novým rokem','Odlety od 19. 12. do 1. 1. Tyhle termíny mizí jako první, ceny jsou o třetinu vyšší než v listopadu, proto ukazujeme jen ty, které za to stojí.',top('xmas'),'xmas');
-  html+=shelf('dubaj','Letenky','Dubaj: zpáteční letenky za nejnižší ceny','Hlídáme odlety z Prahy, Vídně, Katovic a Bratislavy. Zimní Dubaj je kolem 25 °C a přímý let trvá necelých 6 hodin.',bestOf(withTag('dxbflight')).sort(function(a,b){return a.ppp-b.ppp}),'dxbflight');
   // jarní prázdniny
   if(withTag('spring').length) html+='<section class="wrap shelf" id="jarni" aria-labelledby="jarni-h"><div class="shelf-h"><div><div class="eyebrow">Jarní prázdniny 2027</div><h2 id="jarni-h">Jarní prázdniny: vyber svůj okres</h2><p>Termíny podle MŠMT, rozhoduje okres školy. Odlet je vždy v sobotu před prázdninami, aby děti nepřišly o školu.</p></div><button type="button" class="all" data-act="tag" data-tag="spring" data-name="Jarní prázdniny 2027">Všech '+bestOf(withTag('spring')).length+' nabídek →</button></div>'+
     '<div class="district"><label for="okres">Náš okres:</label><input id="okres" type="search" list="okresy" placeholder="např. Frýdek-Místek" autocomplete="off"><datalist id="okresy">'+SPRING.map(function(s){return s.okresy.split(', ').map(function(x){return '<option value="'+esc(x)+'">';}).join('');}).join('')+'</datalist><span class="mono" id="okresHit" style="font-size:12px;color:var(--mute)"></span></div>'+
@@ -707,10 +747,9 @@ function home(){
   html+='<section class="wrap shelf"><a class="promo" href="recko.html"><div class="tx"><div class="eyebrow" style="color:#ffb27a">Speciál</div><h2>Řecko po ostrovech</h2><p>First minute 2027 rozdělené podle ostrovů. Ke každému deset nejlepších nabídek, kdy jet a pro koho je.</p><div class="isl"><span>Kréta</span><span>Kos</span><span>Rhodos</span><span>Korfu</span><span>Zakynthos</span></div></div><div class="art">'+sky({d:{sky:['#bfe3ff','#5aa8e0','#0d3b66'],iata:'GR',k:'gr'}},180)+'</div></a></section>';
   html+=shelf('zazitky','Eurovíkendy a zážitky','Let + hotel na pár dní','Polární záře na Islandu, psí spřežení v Laponsku, nebo prodloužený víkend v Paříži. Letenka i ubytování v jedné ceně.',withTag('combo'),'combo');
   if(withTag('lux').length) html+='<section class="wrap shelf" id="luxus"><div class="lux">'+'<div class="shelf-h"><div><div class="eyebrow">Pro náročné</div><h2>Když má být dovolená zážitek na celý život</h2><p>Pětihvězdičkové resorty, vily nad vodou a soukromé pláže. Hlídáme i tady, kdy je cena rozumná.</p></div><button type="button" class="all" style="color:#e6b45a" data-act="tag" data-tag="lux" data-name="Pro náročné">Zobrazit vše →</button></div>'+rail(bestOf(withTag('lux')).sort(function(a,b){return b.ppp-a.ppp}))+'</div></section>';
-  html+=shelf('letenky','Letenky','Další letenkové poklady','Města i daleké cesty. Zpáteční ceny za osobu.',bestOf(withTag('flights')).sort(function(a,b){return b.idx-a.idx}),'flights');
   if(!DEMO){
     // automatické police z reálných dat (jen když mají dost nabídek)
-    var P=bestOf(ITEMS);
+    var P=bestOf(ITEMS.filter(function(o){return o.type!=='flight'}));
     function auto(id,eye,h2,p,fn,sort,n){var l=P.filter(fn).sort(sort||function(a,b){return b.idx-a.idx});l=mix(l).slice(0,n||14);return l.length>=4?shelf(id,eye,h2,p,l,null):'';}
     var byIdx=function(a,b){return b.idx-a.idx}, byPpn=function(a,b){return a.ppn-b.ppn}, byDep=function(a,b){return a.dep-b.dep};
     var A=[];
@@ -721,20 +760,36 @@ function home(){
     A.push(auto('hodnoceni','Hosté jsou nadšení','Nejlépe hodnocené hotely','Hodnocení 9/10 a víc od skutečných hostů.',function(o){return o.hotel&&o.hotel.rating>=9},byIdx));
     A.push(auto('exotika','Exotika','Exotika do 40 000 Kč','Maledivy, Zanzibar, Thajsko, Karibik a další – za rozumné peníze.',function(o){return /Maledivy|Zanzibar|Thajsko|Mauricius|Seychely|Dominik|Mexiko|Kuba|Srí|Indon|Kapverd/.test(o.d.ctry)&&o.ppp<=40000},byIdx));
     ['OSR','BRQ','VIE','KTW'].forEach(function(a){A.push(auto('z'+a,'Odlet '+AIR_FROM[a],'Nejlepší odlety '+AIR_FROM[a],'Když nechceš jezdit do Prahy.',function(o){return o.air===a},byIdx,12));});
+    var COPY={
+      'Egypt':['Egypt','Korály u břehu a 25 °C i v lednu','Nejjistější zimní teplo do pěti hodin letu. Šnorchl s sebou.'],
+      'Řecko':['Řecko','Taverny, ostrovy a moře jak z pohlednice','Ráno řecký jogurt, odpoledne zátoka, večer gyros u přístavu.'],
+      'Turecko':['Turecko','All inclusive, kde se o nic nestaráš','Aquaparky pro děti, bar u bazénu pro tebe. A pořád za rozumné peníze.'],
+      'Itálie':['Itálie','Pizza, espresso a dolce vita','Moře, hory i města. Itálie, do které se vždycky vrátíš.'],
+      'Thajsko':['Thajsko','Ráj, ze kterého se nechce domů','Ostrovy, chrámy, nejlepší jídlo na světě. Suchá sezóna právě začíná.'],
+      'Spojené arabské emiráty':['Dubaj a Emiráty','Zimní slunce pod mrakodrapy','Pláž, poušť a nákupy. Přímý let za necelých šest hodin.'],
+      'Španělsko':['Španělsko','Fiesta, tapas a dlouhé pláže','Mallorca, Costa del Sol nebo Barcelona. Vyber si svoje Španělsko.'],
+      'Kanárské ostrovy':['Kanárské ostrovy','Věčné jaro pět hodin od Prahy','Když je doma plucha, tady je 23 °C. Celý rok.'],
+      'Bulharsko':['Bulharsko','Moře, na které nepotřebuješ celou výplatu','Nejlevnější all inclusive u moře. Pro rodiny s dětmi ideál.'],
+      'Maledivy':['Maledivy','Když to má být jednou za život','Domek nad vodou, ryby pod podlahou, nikde nikdo.'],
+      'Kypr':['Kypr','Ostrov s nejdelším létem v Evropě','Koupat se dá od dubna do listopadu. Skvělé jídlo a čisté moře.'],
+      'Tunisko':['Tunisko','Krátký let, dlouhé písečné pláže','Thalasso, medina a moře. Afrika na dosah.'],
+      'Mexiko':['Mexiko','Karibik, cenoty a mayské pyramidy','Tyrkysové moře na Riviéře Maya a tequila při západu slunce.'],
+      'Dominikánská republika':['Dominikánská republika','Palmy až k vodě','Bílý písek, rum a all inclusive, které nekončí.'],
+      'Kuba':['Kuba','Staré bouráky, rum a Varadero','Havana jako ve filmu, pak týden na nejhezčí pláži Karibiku.'],
+      'Mauricius':['Mauricius','Laguny, hory a francouzská kuchyně','Exotika, kde se člověk cítí jako doma.'],
+      'Zanzibar':['Zanzibar','Bílý písek a koření','Tyrkysová voda, minimální časový posun a výlety za delfíny.'],
+      'Portugalsko':['Portugalsko','Oceán, surfaři a pastéis de nata','Algarve a Madeira pro ty, kdo nechtějí jen ležet.'],
+      'Seychely':['Seychely','Nejhezčí pláže světa','Žulové balvany, želvy a voda, kterou nevymyslíš.'],
+      'Omán':['Omán','Arábie bez mrakodrapů','Hory, fjordy a poušť. Klidnější a pravější než Dubaj.'],
+      'Srí Lanka':['Srí Lanka','Čaj, sloni a vlny','Chrámy ve skále, čajové plantáže a pláže na jihu.']
+    };
     // police po zemích podle počtu nabídek
     var cnt={};P.forEach(function(o){cnt[o.d.ctry]=(cnt[o.d.ctry]||0)+1;});
     Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]}).slice(0,10).forEach(function(c){
-      A.push(auto('z-'+slug(c),c,c+': nejlepší nabídky',cnt[c]+' hotelů s aktuálními termíny.',function(o){return o.d.ctry===c},byIdx,14));
+      var cp=COPY[c]||[c,c+' podle nás',cnt[c]+' hotelů, vybrali jsme ty, které za svou cenu stojí.'];
+      var minc=Math.min.apply(null,P.filter(function(o){return o.d.ctry===c}).map(function(o){return o.ppp}));
+      A.push(auto('z-'+slug(c),cp[0]+' · od '+kc(minc),cp[1],cp[2],function(o){return o.d.ctry===c},byIdx,14));
     });
-    // letenkové špeky: vlastní karta pro každou dalekou destinaci
-    var FL=ITEMS.filter(function(o){return o.type==='flight'&&!o.cls});
-    if(FL.length){
-      var SPOT=['BKK','DXB','NYC','DPS','TYO','HKT','MLE','CUN','PUJ','ZNZ','SIN','CMB','SGN','SEL','MIA','LAX','LAS','MEX','HAV','RIO','BUE','MRU','SEZ','HKG','KUL','DOH','SYD','CPT'];
-      var cards=SPOT.map(function(c){var l=FL.filter(function(o){return o.d.iata===c}).sort(function(a,b){return a.ppp-b.ppp});return l.length?l:null;}).filter(Boolean);
-      if(cards.length) A.unshift('<section class="wrap shelf" id="spicy"><div class="shelf-h"><div><div class="eyebrow">Letenkové špeky</div><h2>Daleko a levně: nejlepší termíny</h2><p>Zpáteční letenky z Prahy, Vídně, Katovic, Budapešti a Bratislavy. Ceny z posledních hodin.</p></div></div><div class="rail spots">'+cards.map(function(l){var b=l[0];return '<article class="spot"><div class="sk">'+sky(b,90)+'</div><div class="b"><div class="t">'+esc(b.d.city)+'</div><div class="s">'+esc(b.d.ctry)+'</div><div class="from">od <b>'+kc(b.ppp)+'</b> zpáteční</div>'+l.slice(0,5).map(function(o){return '<button type="button" class="srow" data-open="'+o.id+'"><span>'+o.air+'</span><span>'+dc(o.dep)+'–'+dc(o.ret)+'</span><span>'+(o.direct?'přímý':'přestup')+'</span><b>'+kc(o.ppp)+'</b></button>';}).join('')+'</div></article>';}).join('')+'</div></section>');
-    }
-    A.push(auto('business','Business class','Business class nejlevněji','Ležení v letadle za cenu, která dává smysl. Zpáteční ceny za osobu.',function(o){return o.cls===1&&(o.km||0)>1500},function(a,b){return a.ppp-b.ppp},14));
-    A.push(auto('mesta','Městské víkendy','Letenky do měst pod 3 000 Kč','Zpáteční letenky na prodloužený víkend.',function(o){return o.type==='flight'&&!o.cls&&o.ppp<3000&&o.n<=6},function(a,b){return a.ppp-b.ppp},16));
     // prokládat tematické a zemské police
     html+=A.filter(Boolean).join('');
   }
@@ -754,6 +809,7 @@ function home(){
     pair.addEventListener('change',function(){if(PUSH_ID&&pon.textContent.indexOf('Vypnout')===0)ensureSub({daily:true,air:pair.value}).then(pushUI).catch(function(){});});
   }
   $('shelves').innerHTML=html;
+  if(!DEMO) letenkovePoklady();
   // nekonečný proud na konci stránky
   if(!DEMO&&!document.getElementById('feed')){
     var F=mix(bestOf(ITEMS).sort(function(a,b){return b.idx-a.idx})), fi=0;

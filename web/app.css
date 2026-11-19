@@ -367,3 +367,46 @@ footer nav{display:flex;gap:16px;flex-wrap:wrap}
 .spot .srow span:nth-child(3){color:var(--mute);font-size:12px}
 .spot .srow b{font-family:var(--mono)}
 .spot .srow:hover b{color:var(--orange)}
+
+/* ===== Letenkové poklady – noční letiště a palubní lístky ===== */
+.lp{background:radial-gradient(1200px 500px at 80% -10%,#2a1a3a 0,transparent 60%),radial-gradient(900px 400px at 0% 0%,#1d2a44 0,transparent 55%),#0c0e14;color:#f4efe6;padding:46px 0 52px;margin:34px 0;position:relative;overflow:hidden}
+.lp::before{content:"";position:absolute;inset:0;background-image:radial-gradient(#ffffff22 1px,transparent 1.5px);background-size:46px 46px;opacity:.35;pointer-events:none}
+.lp .wrap{position:relative}
+.lp-eye{font-family:var(--mono);font-weight:800;letter-spacing:.35em;font-size:12px;color:#ffb347}
+.lp h2{font-family:var(--mono);font-weight:800;font-size:clamp(32px,5.4vw,58px);letter-spacing:-.02em;margin:8px 0 6px;line-height:1;text-transform:uppercase;color:#fff;text-shadow:0 0 30px rgba(255,140,40,.35)}
+.lp-head p{max-width:62ch;color:#c9c2b8;margin:0 0 18px;font-size:15px}
+.lp-chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.lp-chips button{flex:none;border:1px solid #3a3a44;background:#16181f;color:#e8e2d8;border-radius:999px;padding:9px 15px;font:inherit;font-weight:700;font-size:14px;cursor:pointer}
+.lp-chips button[aria-pressed="true"]{background:#ff7a1f;border-color:#ff7a1f;color:#1a0d02}
+.lp-chips.small{margin-top:8px}.lp-chips.small button{padding:6px 12px;font-size:12.5px;font-family:var(--mono)}
+.lp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:22px}
+@media(max-width:700px){.lp-grid{grid-auto-flow:column;grid-template-columns:none;grid-auto-columns:86%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:10px}.bp{scroll-snap-align:start}}
+.lp-empty{color:#c9c2b8}
+.bp{position:relative;background:#fff8ee;color:#1d1a17;border-radius:18px;padding:16px 18px 14px;cursor:pointer;box-shadow:0 14px 34px rgba(0,0,0,.45);transition:transform .15s;min-width:0}
+.bp:hover{transform:translateY(-3px) rotate(-.3deg)}
+.bp.biz{background:linear-gradient(160deg,#1f1c18,#2b2520);color:#f6ead7;box-shadow:0 14px 34px rgba(0,0,0,.6),inset 0 0 0 1px #6b5532}
+.bp-top{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;font-weight:800;letter-spacing:.18em;color:#b6532a}
+.bp.biz .bp-top{color:#e6b45a}
+.bp-route{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;margin:12px 0 10px}
+.bp-c b{display:block;font-family:var(--mono);font-weight:800;font-size:40px;letter-spacing:-.02em;line-height:.95}
+.bp-c small{display:block;font-size:12.5px;font-weight:700;opacity:.65;margin-top:3px;max-width:120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bp-c.r{text-align:right}
+.bp-fly{position:relative;text-align:center;min-width:60px}
+.bp-fly i{position:absolute;left:0;right:0;top:50%;border-top:2px dashed currentColor;opacity:.3}
+.bp-fly span{position:relative;background:inherit;padding:0 6px;font-size:18px;color:#ff6a1a}
+.bp.biz .bp-fly span{color:#e6b45a}
+.bp-fly small{display:block;font-family:var(--mono);font-size:11px;opacity:.6;margin-top:2px}
+.bp-meta{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;font-weight:700;font-size:14px}
+.bp-meta small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.15em;opacity:.55;font-weight:800}
+.bp-tear{position:relative;height:0;border-top:2px dashed rgba(0,0,0,.18);margin:14px -18px 12px}
+.bp.biz .bp-tear{border-color:rgba(255,255,255,.18)}
+.bp-tear::before,.bp-tear::after{content:"";position:absolute;top:-12px;width:22px;height:22px;border-radius:50%;background:#0c0e14}
+.bp-tear::before{left:-11px}.bp-tear::after{right:-11px}
+.bp-foot{display:flex;justify-content:space-between;align-items:flex-end;gap:10px}
+.bp-price{font-family:var(--display);font-weight:800;font-size:30px;letter-spacing:-.02em;line-height:1;color:#e2421c}
+.bp.biz .bp-price{color:#f1c46b}
+.bp-price small{display:block;font-family:var(--body);font-size:12px;font-weight:600;color:inherit;opacity:.6;letter-spacing:0;margin-top:4px;color:#6b625a}
+.bp.biz .bp-price small{color:#b9ab95}
+.bp-bar{width:84px;height:34px;flex:none;background:repeating-linear-gradient(90deg,currentColor 0 2px,transparent 2px 4px,currentColor 4px 5px,transparent 5px 8px,currentColor 8px 11px,transparent 11px 13px);opacity:.75}
+.bp-more{margin-top:10px;font-family:var(--mono);font-size:12px;font-weight:800;color:#b6532a}
+.bp.biz .bp-more{color:#e6b45a}
