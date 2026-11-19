@@ -363,7 +363,7 @@ function welcomeApp(){
   if(!IS_APP||lsGet('cp_app_welcome')) return; lsSet('cp_app_welcome','1'); lsSet('cp_installed','1');if(window.cpTrack)cpTrack('PrvniSpusteniZPlochy');
   if(!pushSupported()||PUSH_ID) return;
   var el=document.createElement('div');el.id='isheet';el.className='isheet';
-  el.innerHTML='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Vítej v Pomeranči 🍊</b><span>Chceš každé ráno vědět, co zlevnilo? Pošleme jedno upozornění denně kolem osmé.</span></div></div><button type="button" class="btn or ibtn" data-i="push">☀ Zapnout ranní poklady</button>';
+  el.innerHTML='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Vítej v Pomeranči 🍊</b><span>Chceš vědět, když něco výrazně zlevní? Ráno souhrn, přes den jen opravdové poklady.</span></div></div><button type="button" class="btn or ibtn" data-i="push">☀ Zapnout ranní poklady</button>';
   document.body.appendChild(el);requestAnimationFrame(function(){el.classList.add('on');});
   el.addEventListener('click',function(e){
     if(e.target.closest('.ix')){hideInstall();return;}
