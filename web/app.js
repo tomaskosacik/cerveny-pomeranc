@@ -484,7 +484,7 @@ function row(o){
   return '<article class="row" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(title(o)+', '+kc(o.ppp))+'">'+
     '<div style="min-width:0">'+lbl(o)+'<div class="dest">'+esc(title(o))+'</div><div class="sub">'+sub(o)+'</div>'+
     '<div class="meta">'+where+'<span><svg class="i"><use href="#i-cal"/></svg>'+dc(o.dep)+'–'+dc(o.ret)+'</span></div></div>'+
-    (o.hist.length>=3?'<div class="trend">'+pct+'<svg class="sp" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true">'+spark(o.hist,120,44,true)+'</svg><small>cena '+o.hist.length+' dní</small></div>':'<div class="trend">'+pct+'<small>'+(o.partner?PARTNER[o.partner]:'')+'</small></div>')+
+    (o.hist.length>=3?'<div class="trend">'+pct+'<svg class="sp" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true">'+spark(o.hist,120,44,true)+'</svg><small>cena '+o.hist.length+' dní</small></div>':'<div class="trend">'+pct+'</div>')+
     '<div class="pr"><div class="p">'+kc(o.ppp)+'</div>'+under+'<div class="upd">Aktualizováno '+ago(o.checkedMin)+'</div></div>'+
     '<div class="acts"><button type="button" class="heart" data-save="'+o.id+'" aria-pressed="'+isSaved(o.id)+'" aria-label="Uložit"><svg><use href="#hrt"/></svg></button><button type="button" class="go" data-open="'+o.id+'" aria-label="Detail nabídky"><svg class="i"><use href="#i-arrow"/></svg></button></div></article>';
 }
@@ -849,11 +849,15 @@ function home(){
       if(S.tab==='lm') l.sort(function(a,c){return a.dep-c.dep||c.idx-a.idx;});
       else if(S.tab==='sleva') l.sort(function(a,c){return Math.max(c.disc||0,c.dropPct*100)-Math.max(a.disc||0,a.dropPct*100)||c.idx-a.idx;});
       else if(S.tab==='fm') l.sort(function(a,c){return a.ppn-c.ppn;});
-      if(!S.q&&!S.fn&&S.tab!=='lm') l=mix(l);
+      else if(S.tab==='all') l.sort(function(a,c){return a.dep-c.dep||c.idx-a.idx;});
+      else if(S.tab==='nove') l.sort(function(a,c){return a.age-c.age||c.idx-a.idx;});
+      else if(S.tab==='lux') l.sort(function(a,c){return c.ppp-a.ppp;});
+      if(!S.q&&!S.fn&&S.tab!=='lm'&&S.tab!=='all') l=mix(l);
     }
     if(!S.savedOnly){var sn={};l=l.filter(function(o){var k=o.hotel?hk(o):'x'+o.id;if(sn[k])return false;sn[k]=1;return true;});}
     var chip=S.savedOnly?'Uložené nabídky':S.tagName||'';
-    $('list').innerHTML=(chip?'<p class="vchip mono">'+esc(chip)+' · '+l.length+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zrušit</button></p>':'')+
+    var NOTE={all:'Všechno podle data odletu, nejbližší nahoře.',poklady:'Jen poklady: nejvyšší Pomeranč index nebo výrazný pokles ceny. Nejlepší nahoře.',lm:'Odlet do 3 týdnů, od nejbližšího.',nove:'Přibylo za posledních 24 hodin, nejnovější nahoře.',sleva:'Seřazeno podle velikosti slevy.',fm:'Léto a podzim 2027, od nejnižší ceny za noc.',lux:'Pět hvězd a exotika, od nejdražších.'};
+    $('list').innerHTML=(S.sort==='idx'&&!S.savedOnly&&NOTE[S.tab]?'<p class="vchip mono">'+NOTE[S.tab]+'</p>':'')+(chip?'<p class="vchip mono">'+esc(chip)+' · '+l.length+' · <button type="button" class="btn ghost" data-act="clear" style="padding:4px 10px">zrušit</button></p>':'')+
       (l.length?l.slice(0,shown).map(row).join(''):'<div class="empty">'+(S.savedOnly?'Zatím nic uloženého. Klikni na ♥ u nabídky.':'Na tenhle výběr teď nic nemáme. Zkus jiný termín nebo vyšší rozpočet.')+'</div>');
     $('moreBtn').hidden=l.length<=shown;
     $('ddMonth').classList.toggle('on',S.month!=='all');$('ddMax').classList.toggle('on',!!S.max);$('ddBoard').classList.toggle('on',!!S.board);$('ddAir').classList.toggle('on',!!S.air);
