@@ -88,6 +88,30 @@ function dailySummary(M, air) {
   };
 }
 
+// průběžné upozornění během dne: nejsilnější novinka z poslední aktualizace
+function flashPick(M, recent) {
+  const H = M.h; let best = null, bs = 0;
+  for (const r of M.o) {
+    const h = H[r[0]]; if (!h || (h[2] || 0) < 4 || recent.includes(h[0])) continue;
+    const hist = Array.isArray(r[10]) ? r[10] : null, mx = hist ? Math.max(...hist) : r[6];
+    const drop = mx > r[6] ? (mx - r[6]) / mx : 0, isNew = r[9] <= 1;
+    const days = (new Date(r[2] + 'T00:00:00') - Date.now()) / 864e5; if (days < 2) continue;
+    const sc = Math.max(drop * 100, (r[7] || 0) * 0.8) + (isNew ? 4 : 0);
+    if (sc > bs && (drop >= 0.08 || (r[7] || 0) >= 20)) { bs = sc; best = { r, h, drop }; }
+  }
+  if (!best) return null;
+  const { r, h, drop } = best, place = h[4] && h[4] !== h[3] ? `${h[4]}, ${h[3]}` : h[3];
+  const dep = r[2].split('-').reverse().slice(0, 2).map(Number).join('. ') + '.';
+  return {
+    gid: h[0],
+    msg: {
+      title: drop >= 0.08 ? `▼ Zlevnilo o ${Math.round(drop * 100)} %: ${place}` : `🔥 Sleva ${r[7]} %: ${place}`,
+      body: `${h[1]} ${'★'.repeat(Math.round(h[2] || 0))} od ${kc(r[6])}, odlet ${dep}` ,
+      url: `/?utm_source=push&utm_campaign=flash#hotel-${h[0]}`, tag: 'flash', badge: 1,
+    },
+  };
+}
+
 // ------------------------------------------------------------ odběratelé
 async function getSub(env, id) { return id ? env.PUSH.get('sub:' + id, 'json') : null; }
 async function putSub(env, id, s) { await env.PUSH.put('sub:' + id, JSON.stringify(s)); }
@@ -106,7 +130,16 @@ async function notify(env, req) {
   const gen = M.gen;
   if (!st.run || st.run.gen !== gen || st.run.done) {
     if (st.run && st.run.gen === gen && st.run.done && !dailyDue) return { done: true, note: 'nic nového' };
-    st.run = { gen, cursor: null, done: false, daily: dailyDue, sent: 0, gone: 0 };
+    st.run = { gen, cursor: null, done: false, daily: dailyDue, flash: false, sent: 0, gone: 0 };
+    // přes den (9–21 h) po každé aktualizaci jedna novinka, pokud je opravdu silná
+    if (!dailyDue && now.hour >= 9 && now.hour < 21) {
+      const f = flashPick(M, st.flashRecent || []);
+      if (f) {
+        await env.PUSH.put('flash', JSON.stringify({ gen, msg: f.msg }), { expirationTtl: 86400 });
+        st.flashRecent = [f.gid].concat(st.flashRecent || []).slice(0, 30);
+        st.run.flash = true;
+      }
+    }
     if (dailyDue) {
       const byAir = {};
       for (const a of ['', 'PRG', 'BRQ', 'OSR', 'PED', 'VIE', 'KTW', 'BTS']) byAir[a] = dailySummary(M, a || null);
@@ -119,7 +152,7 @@ async function notify(env, req) {
   for (const k of list.keys) {
     const id = k.name.slice(4), s = await getSub(env, id);
     if (!s) continue;
-    let push = run.daily && s.daily !== false;
+    let push = (run.daily || run.flash) && s.daily !== false;
     const msgs = [];
     if (s.watch && s.watch.length) {
       for (const w of s.watch) {
@@ -145,7 +178,7 @@ async function notify(env, req) {
   run.cursor = list.list_complete ? null : list.cursor;
   if (list.list_complete) { run.done = true; if (run.daily) st.dailyDay = now.day; }
   await env.PUSH.put('notify:state', JSON.stringify(st));
-  return { done: run.done, sent: run.sent, gone: run.gone, daily: run.daily };
+  return { done: run.done, sent: run.sent, gone: run.gone, daily: run.daily, flash: run.flash };
 }
 
 // ------------------------------------------------------------ router
@@ -195,6 +228,8 @@ export async function onRequest(ctx) {
           const m = d.byAir[s.air || ''] || d.byAir[''];
           if (m) msgs.unshift(Object.assign({ once: 'ranni-' + d.day }, m));
         }
+        const f = s && s.daily !== false ? await env.PUSH.get('flash', 'json') : null;
+        if (f && f.msg) msgs.push(Object.assign({ once: 'flash-' + f.gen }, f.msg));
         return J({ msgs });
       }
       case 'notify': return J(await notify(env, req));
