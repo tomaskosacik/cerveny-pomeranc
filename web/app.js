@@ -825,6 +825,7 @@ function home(){
     ['🎄','Vánoce a Silvestr',function(o){return o.tags.indexOf('xmas')>=0}],
     ['🎒','Jarní prázdniny',function(o){return o.tags.indexOf('spring')>=0}],
     ['🌴','Exotika do 40 tisíc',function(o){return /Maledivy|Zanzibar|Thajsko|Mauricius|Seychely|Dominik|Mexiko|Kuba|Srí|Indon|Kapverd/.test(o.d.ctry)&&o.ppp<=40000}],
+    ['🎁','Dárek pod stromeček do 10 000',function(o){return o.ppp<=10000&&daysTo(o)>=20}],
     ['💸','Týden do 15 000 Kč',function(o){return o.ppp<=15000&&o.n>=6}],
     ['🍹','All inclusive',function(o){return o.board==='AI'||o.board==='UAI'}],
     ['⚡','Prodloužený víkend',function(o){return o.n>=3&&o.n<=5&&daysTo(o)<62}],
@@ -926,6 +927,8 @@ function home(){
 
   if(!DEMO) window.__cpRefresh=function(){window.__cpRefresh=null;setTimeout(function(){fetch('data/main.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(J){if(J.gen!==DATA.gen){if(document.hidden)location.reload();else toast('Je tu nový tucet – obnov stránku');}});},5*60e3);};
   setTimeout(function(){try{localStorage.setItem('cp_last',Date.now())}catch(e){}},5000);
+  // odkaz z vánoční reklamy: #darek = malé zájezdy pod stromeček
+  if(location.hash==='#darek') setTimeout(function(){window.__showFn(function(o){return o.type==='package'&&o.ppp<=10000&&daysTo(o)>=20;},'🎁 Pod stromeček: zájezdy do 10 000 Kč na osobu');},300);
 }
 
 function greece(){
