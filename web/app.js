@@ -246,8 +246,9 @@ function fromFlights(F,J){
     var dep=new Date(r[4]+'T00:00:00'), ret=new Date(r[5]+'T00:00:00'), days=Math.max(1,Math.round((ret-dep)/864e5));
     var base=DEST[CTRY[r[3]]]||EXTRA[r[3]]||{};
     var d={k:'f-'+r[1],city:r[2],ctry:r[3]||r[2],iata:r[1],fly:r[11]?Math.round((r[11]/780+.6)*10)/10:0,km:r[11]||0,sea:base.sea||null,temps:base.temps||[],sky:base.sky||['#e3efff','#9cbcf0','#26446f'],hint:base.hint||'',car:false};
-    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:['flights'],direct:r[8]===0,url:r[9],partner:'a',disc:0};
-    if(r[1]==='DXB') o.tags.push('dxbflight');
+    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:[r[13]?'business':'flights'],direct:r[8]===0,url:r[9],partner:'a',disc:0,cls:r[13]||0,km:r[11]||0};
+    if(r[1]==='DXB'&&!r[13]) o.tags.push('dxbflight');
+    if(!r[13]&&(r[11]||0)>3500) o.tags.push('daleko');
     o.id=NEXT++; o.age=9999; o.isNew=false; o.drop=0; o.dropPct=0; o.ppn=Math.round(o.ppp/days);
     o.checkedMin=Math.max(1,Math.round((Date.now()-gen)/6e4));
     ITEMS.push(o);
@@ -423,7 +424,7 @@ function title(o){
   return o.d.ctry===o.d.city?o.d.city:o.d.ctry+' – '+o.d.city;
 }
 function sub(o){
-  if(o.type==='flight') return 'zpáteční · '+(o.direct?'přímý let':'s přestupem')+' · '+o.n+' dní';
+  if(o.type==='flight') return (o.cls?'business class · ':'')+'zpáteční · '+(o.direct?'přímý let':'s přestupem')+' · '+o.n+' dní';
   if(o.type==='combo') return o.what;
   if(o.type==='hotel') return esc(o.hotel.name)+' '+'★'.repeat(o.hotel.stars)+' · '+BOARD[o.board];
   return (PAGE==='greece'?'★'.repeat(o.hotel.stars)+' · '+(o.hotel.rating?String(o.hotel.rating).replace('.',',')+'/10 · ':''):'')+nights(o.n)+' · '+BOARD[o.board];
@@ -461,7 +462,7 @@ function spark(h,W,H,dots){
 function lbl(o){
   if(o.tags.indexOf('lux')>=0) return '<span class="lbl" style="background:#141312;color:#e6b45a">◆ PRO NÁROČNÉ</span>';
   if(isTreasure(o)) return '<span class="lbl poklad">★ POKLAD</span>';
-  if(o.type==='flight') return '<span class="lbl fm">✈ LETENKA</span>';
+  if(o.type==='flight') return o.cls?'<span class="lbl" style="background:#141312;color:#e6b45a">✈ BUSINESS</span>':'<span class="lbl fm">✈ LETENKA</span>';
   if(o.type==='hotel') return '<span class="lbl fm">▣ UBYTOVÁNÍ</span>';
   if(o.type==='combo') return '<span class="lbl fm">✦ LET + HOTEL</span>';
   if(o.isNew) return '<span class="lbl nove">★ NOVÉ</span>';
@@ -488,7 +489,7 @@ function row(o){
 }
 function tile(o){
   var top=o.type==='hotel'?esc(o.hotel.name)+' '+'★'.repeat(o.hotel.stars):o.type==='flight'?(o.direct?'přímý let':'s přestupem')+' · zpáteční':o.type==='combo'?esc(o.what):esc(o.hotel.name)+' '+'★'.repeat(o.hotel.stars);
-  var m=o.type==='hotel'?'<span>'+BOARD[o.board]+'</span><span>od '+ds(o.dep)+'</span>':'<span>'+dc(o.dep)+'–'+dc(o.ret)+'</span><span>'+(o.type==='flight'?o.n+' dní':nights(o.n))+'</span><span>✈ '+(o.air==='CAR'?'autem':o.air)+'</span>'+(o.board&&o.type==='package'?'<span>'+BOARD[o.board]+'</span>':'');
+  var m=o.type==='hotel'?'<span>'+BOARD[o.board]+'</span><span>od '+ds(o.dep)+'</span>':'<span>'+dc(o.dep)+'–'+dc(o.ret)+'</span><span>'+(o.type==='flight'?o.n+(o.n===1?' den':o.n<5?' dny':' dní'):nights(o.n))+'</span><span>✈ '+(o.air==='CAR'?'autem':o.air)+'</span>'+(o.board&&o.type==='package'?'<span>'+BOARD[o.board]+'</span>':'');
   return '<article class="tile" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(title(o)+', '+kc(o.ppp))+'"><div class="sk">'+pic(o,96)+lbl(o)+'<button type="button" class="heart" data-save="'+o.id+'" aria-pressed="'+isSaved(o.id)+'" aria-label="Uložit"><svg><use href="#hrt"/></svg></button></div>'+
     '<div class="b"><div class="t">'+esc(o.type==='flight'?o.d.city+' z '+AIR[o.air].replace('Praha','Prahy').replace('Vídeň','Vídně').replace('Katovice','Katovic').replace('Bratislava','Bratislavy').replace('Brno','Brna'):o.d.city)+'</div><div class="s">'+top+'</div><div class="m">'+m+'</div>'+
     '<div class="w">'+esc(why(o))+'</div>'+
@@ -725,6 +726,15 @@ function home(){
     Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a]}).slice(0,10).forEach(function(c){
       A.push(auto('z-'+slug(c),c,c+': nejlepší nabídky',cnt[c]+' hotelů s aktuálními termíny.',function(o){return o.d.ctry===c},byIdx,14));
     });
+    // letenkové špeky: vlastní karta pro každou dalekou destinaci
+    var FL=ITEMS.filter(function(o){return o.type==='flight'&&!o.cls});
+    if(FL.length){
+      var SPOT=['BKK','DXB','NYC','DPS','TYO','HKT','MLE','CUN','PUJ','ZNZ','SIN','CMB','SGN','SEL','MIA','LAX','LAS','MEX','HAV','RIO','BUE','MRU','SEZ','HKG','KUL','DOH','SYD','CPT'];
+      var cards=SPOT.map(function(c){var l=FL.filter(function(o){return o.d.iata===c}).sort(function(a,b){return a.ppp-b.ppp});return l.length?l:null;}).filter(Boolean);
+      if(cards.length) A.unshift('<section class="wrap shelf" id="spicy"><div class="shelf-h"><div><div class="eyebrow">Letenkové špeky</div><h2>Daleko a levně: nejlepší termíny</h2><p>Zpáteční letenky z Prahy, Vídně, Katovic, Budapešti a Bratislavy. Ceny z posledních hodin.</p></div></div><div class="rail spots">'+cards.map(function(l){var b=l[0];return '<article class="spot"><div class="sk">'+sky(b,90)+'</div><div class="b"><div class="t">'+esc(b.d.city)+'</div><div class="s">'+esc(b.d.ctry)+'</div><div class="from">od <b>'+kc(b.ppp)+'</b> zpáteční</div>'+l.slice(0,5).map(function(o){return '<button type="button" class="srow" data-open="'+o.id+'"><span>'+o.air+'</span><span>'+dc(o.dep)+'–'+dc(o.ret)+'</span><span>'+(o.direct?'přímý':'přestup')+'</span><b>'+kc(o.ppp)+'</b></button>';}).join('')+'</div></article>';}).join('')+'</div></section>');
+    }
+    A.push(auto('business','Business class','Business class nejlevněji','Ležení v letadle za cenu, která dává smysl. Zpáteční ceny za osobu.',function(o){return o.cls===1},function(a,b){return a.ppp-b.ppp},14));
+    A.push(auto('mesta','Městské víkendy','Letenky do měst pod 3 000 Kč','Zpáteční letenky na prodloužený víkend.',function(o){return o.type==='flight'&&!o.cls&&o.ppp<3000&&o.n<=6},function(a,b){return a.ppp-b.ppp},16));
     // prokládat tematické a zemské police
     html+=A.filter(Boolean).join('');
   }

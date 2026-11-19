@@ -368,18 +368,22 @@ async function flights() {
     countries = await getJ('https://api.travelpayouts.com/data/cs/countries.json');
   }
   const CITY = Object.fromEntries(cities.map((c) => [c.code, c]));
-  const CTRY = Object.fromEntries(countries.map((c) => [c.code, c.name]));
+  const DN = new Intl.DisplayNames(['cs'], { type: 'region' });
+  const CTRY = new Proxy({}, { get: (_, code) => { try { return code ? DN.of(String(code)) : ''; } catch { return ''; } } });
+  const CS = { WAW: 'Varšava', MIL: 'Milán', VCE: 'Benátky', ROM: 'Řím', LON: 'Londýn', PAR: 'Paříž', BCN: 'Barcelona', MAD: 'Madrid', LIS: 'Lisabon', ATH: 'Atény', IST: 'Istanbul', BER: 'Berlín', MUC: 'Mnichov', VIE: 'Vídeň', PRG: 'Praha', BRU: 'Brusel', AMS: 'Amsterdam', CPH: 'Kodaň', STO: 'Stockholm', OSL: 'Oslo', HEL: 'Helsinky', REK: 'Reykjavík', DUB: 'Dublin', EDI: 'Edinburgh', NAP: 'Neapol', FLR: 'Florencie', PMO: 'Palermo', CTA: 'Catania', BRI: 'Bari', NCE: 'Nice', MRS: 'Marseille', LYS: 'Lyon', GVA: 'Ženeva', ZRH: 'Curych', MLA: 'Malta', LCA: 'Larnaka', PFO: 'Paphos', TLV: 'Tel Aviv', CAI: 'Káhira', HRG: 'Hurghada', SSH: 'Šarm aš-Šajch', RAK: 'Marrákeš', AGA: 'Agadir', TFS: 'Tenerife', LPA: 'Gran Canaria', ACE: 'Lanzarote', FUE: 'Fuerteventura', PMI: 'Mallorca', IBZ: 'Ibiza', AGP: 'Málaga', ALC: 'Alicante', VLC: 'Valencie', SVQ: 'Sevilla', OPO: 'Porto', FAO: 'Faro', FNC: 'Madeira', DXB: 'Dubaj', AUH: 'Abú Dhabí', DOH: 'Dauhá', MCT: 'Maskat', BKK: 'Bangkok', HKT: 'Phuket', DPS: 'Bali', SIN: 'Singapur', HKG: 'Hongkong', TYO: 'Tokio', SEL: 'Soul', PEK: 'Peking', SHA: 'Šanghaj', KUL: 'Kuala Lumpur', MLE: 'Maledivy', CMB: 'Kolombo', DEL: 'Dillí', NYC: 'New York', LAX: 'Los Angeles', MIA: 'Miami', SFO: 'San Francisco', CHI: 'Chicago', YTO: 'Toronto', YMQ: 'Montreal', CUN: 'Cancún', HAV: 'Havana', PUJ: 'Punta Cana', SDQ: 'Santo Domingo', ZNZ: 'Zanzibar', SEZ: 'Seychely', MRU: 'Mauricius', CPT: 'Kapské Město', NBO: 'Nairobi', SID: 'Kapverdy', TIA: 'Tirana', SPU: 'Split', DBV: 'Dubrovník', ZAG: 'Záhřeb', BEG: 'Bělehrad', SOF: 'Sofie', VAR: 'Varna', BOJ: 'Burgas', OTP: 'Bukurešť', RHO: 'Rhodos', HER: 'Kréta', CFU: 'Korfu', KGS: 'Kos', ZTH: 'Zakynthos', JMK: 'Mykonos', JTR: 'Santorini', SKG: 'Soluň', AYT: 'Antalya', DLM: 'Dalaman', BJV: 'Bodrum', TBS: 'Tbilisi', EVN: 'Jerevan', BUD: 'Budapešť', KRK: 'Krakov', KTW: 'Katovice', BTS: 'Bratislava', RIX: 'Riga', TLL: 'Tallinn', VNO: 'Vilnius', SJJ: 'Sarajevo', TGD: 'Podgorica', OHD: 'Ochrid', MAN: 'Manchester', LIV: 'Liverpool', BUE: 'Buenos Aires', RIO: 'Rio de Janeiro', SAO: 'São Paulo', LIM: 'Lima', BOG: 'Bogotá', SYD: 'Sydney', MEL: 'Melbourne', AKL: 'Auckland', MNL: 'Manila', SGN: 'Ho Či Minovo Město', HAN: 'Hanoj', REP: 'Siem Reap', KTM: 'Káthmándú', TFN: 'Tenerife', KEF: 'Reykjavík', RVN: 'Rovaniemi' };
   const rows = [], log = [];
-  for (const o of ORIGINS) {
+  const RUNS = ORIGINS.map((o) => [o, 0]).concat((TP.business || ['PRG', 'VIE', 'BUD']).map((o) => [o, 1]));
+  for (const [o, cls] of RUNS) {
     let data = [];
     try {
-      if (process.argv.includes('--flights-local')) data = JSON.parse(await readFile(`${HERE}raw/tp/latest-${o}.json`, 'utf8')).data || [];
+      if (process.argv.includes('--flights-local')) data = JSON.parse(await readFile(`${HERE}raw/tp/latest-${o}${cls ? '-b' : ''}.json`, 'utf8')).data || [];
       else {
-        const u = `https://api.travelpayouts.com/aviasales/v3/get_latest_prices?origin=${o}&currency=czk&period_type=year&one_way=false&limit=1000&page=1&sorting=price&show_to_affiliates=true`;
+        const u = `https://api.travelpayouts.com/aviasales/v3/get_latest_prices?origin=${o}&currency=czk&period_type=year&one_way=false&limit=1000&page=1&sorting=price&show_to_affiliates=true&trip_class=${cls}`;
         const j = await getJ(u, { 'X-Access-Token': TOKEN });
         data = j.data || [];
         await mkdir(HERE + 'raw/tp', { recursive: true });
-        await writeFile(`${HERE}raw/tp/latest-${o}.json`, JSON.stringify(j));
+        await writeFile(`${HERE}raw/tp/latest-${o}${cls ? '-b' : ''}.json`, JSON.stringify(j));
+        if (!cls && j.data && j.data[0]) log.push('pole: ' + Object.keys(j.data[0]).join(','));
       }
     } catch (e) { log.push(`letenky ${o}: CHYBA ${e.message}`); continue; }
     // obvyklá cena trasy = medián všech nalezených cen na dané trase
@@ -393,20 +397,21 @@ async function flights() {
       arr.sort((a, b) => a.value - b.value);
       const prices = arr.map((f) => f.value), mid = prices[Math.floor(prices.length / 2)];
       const c = CITY[dst] || CITY[(arr[0].destination_airport || '')] || {};
-      const city = (c.name_translations && (c.name_translations.cs || c.name_translations.en)) || c.name || dst;
+      if (['RU', 'BY'].includes(c.country_code)) continue; // sankce, nedává smysl nabízet
+      const city = CS[dst] || (c.name_translations && (c.name_translations.cs || c.name_translations.en)) || c.name || dst;
       // nejlevnější termín + pár dalších levných v jiných měsících
       const seenM = new Set();
       for (const f of arr) {
         const m = f.depart_date.slice(0, 7);
         if (seenM.has(m)) continue; seenM.add(m);
         const dd = (s) => s.slice(8, 10) + s.slice(5, 7);
-        const search = `https://www.aviasales.com/search/${o}${dd(f.depart_date)}${dst}${dd(f.return_date)}1?currency=czk&locale=cs`;
+        const search = `https://www.aviasales.com/search/${o}${dd(f.depart_date)}${dst}${dd(f.return_date)}${cls ? 'c' : ''}1?currency=czk&locale=cs`;
         const link = `https://tp.media/r?marker=${TP.marker}&trs=${TP.trs}&p=4114&campaign_id=100&u=${encodeURIComponent(search)}`;
-        rows.push([o, dst, city, CTRY[c.country_code] || c.country_code || '', f.depart_date, f.return_date, Math.round(f.value), Math.round(mid), f.number_of_changes ?? null, link, c.coordinates ? [c.coordinates.lat, c.coordinates.lon] : null, f.distance || null]);
-        if (seenM.size >= 3) break;
+        rows.push([o, dst, city, CTRY[c.country_code] || c.country_code || '', f.depart_date.slice(0, 10), f.return_date.slice(0, 10), Math.round(f.value), Math.round(mid), f.number_of_changes ?? null, link, c.coordinates ? [c.coordinates.lat, c.coordinates.lon] : null, f.distance || null, f.airline || '', cls]);
+        if (seenM.size >= ((f.distance || 0) > 3000 ? 6 : 3)) break;
       }
     }
-    log.push(`letenky ${o}: ${data.length} cen, ${Object.keys(byDest).length} destinací`);
+    log.push(`letenky ${o}${cls ? ' business' : ''}: ${data.length} cen, ${Object.keys(byDest).length} destinací`);
   }
   await mkdir(OUT + 'web', { recursive: true });
   await writeFile(OUT + 'web/flights.json', JSON.stringify({ gen: now, f: rows }));

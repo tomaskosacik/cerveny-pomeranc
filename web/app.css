@@ -353,3 +353,17 @@ footer nav{display:flex;gap:16px;flex-wrap:wrap}
 #qGo{flex:none}
 .isheet.ios{bottom:calc(14px + env(safe-area-inset-bottom))}
 .isheet.ios .iarrow{bottom:-58px}
+
+/* letenkové špeky */
+.spots{grid-auto-columns:minmax(290px,320px)}
+.spot{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.spot .sk{height:90px}
+.spot .b{padding:12px 14px 10px}
+.spot .t{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.02em;line-height:1.05}
+.spot .s{color:var(--mute);font-size:13px;font-weight:600}
+.spot .from{margin:6px 0 8px;font-size:14px}.spot .from b{font-family:var(--display);font-size:20px;color:var(--orange)}
+.spot .srow{display:grid;grid-template-columns:38px 1fr auto auto;gap:8px;align-items:center;width:100%;padding:8px 0;border:0;border-top:1px solid var(--line);background:none;font:inherit;font-size:13px;text-align:left;cursor:pointer;color:inherit}
+.spot .srow span:first-child{font-family:var(--mono);font-weight:800}
+.spot .srow span:nth-child(3){color:var(--mute);font-size:12px}
+.spot .srow b{font-family:var(--mono)}
+.spot .srow:hover b{color:var(--orange)}
