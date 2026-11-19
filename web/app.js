@@ -239,15 +239,16 @@ function fromData(J){
   });
 }
 // letenky z Travelpayouts (Aviasales): [odkud, kam, město, země, tam, zpět, cena, obvyklá, přestupy, odkaz, [lat,lon], km]
-PARTNER.a='Aviasales';
+PARTNER.a='Aviasales';PARTNER.k='Kiwi.com';
 function fromFlights(F,J){
   var gen=new Date(J.gen);
   F.f.forEach(function(r){
-    if(r[13]?(r[11]||0)<1500:(r[11]||0)<2500) return;
+    if(r[13]?(r[11]||0)<1500:(r[11]||0)<2500) return;if(r[8]>1) return;
     var dep=new Date(r[4]+'T00:00:00'), ret=new Date(r[5]+'T00:00:00'), days=Math.max(1,Math.round((ret-dep)/864e5));
     var base=DEST[CTRY[r[3]]]||EXTRA[r[3]]||{};
     var d={k:'f-'+r[1],city:r[2],ctry:r[3]||r[2],iata:r[1],fly:r[11]?Math.round((r[11]/780+.6)*10)/10:0,km:r[11]||0,sea:base.sea||null,temps:base.temps||[],sky:base.sky||['#e3efff','#9cbcf0','#26446f'],hint:base.hint||'',car:false};
-    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:[r[13]?'business':'flights'],direct:r[8]===0,changes:r[8],url:r[9],partner:'a',disc:0,cls:r[13]||0,km:r[11]||0};
+    var isK=/kiwi/.test(decodeURIComponent(r[9]||''));
+    var o={type:'flight',d:d,air:r[0],dep:dep,ret:ret,n:days,ppp:r[6],typical:Math.max(r[7],r[6]),hist:[r[6]],tags:[r[13]?'business':'flights'],direct:r[8]===0,changes:r[8],url:r[9],partner:isK?'k':'a',disc:0,cls:r[13]||0,km:r[11]||0};
     if(r[1]==='DXB'&&!r[13]) o.tags.push('dxbflight');
     if(!r[13]&&(r[11]||0)>3500) o.tags.push('daleko');
     o.id=NEXT++; o.age=9999; o.isNew=false; o.drop=0; o.dropPct=0; o.ppn=Math.round(o.ppp/days);
@@ -625,7 +626,7 @@ function letenkovePoklady(){
   }
   var airs=['','PRG','VIE','KTW','BUD','BTS'];
   slot.outerHTML='<section class="lp" id="letenky" aria-labelledby="lp-h"><div class="wrap">'+
-    '<div class="lp-head"><div class="lp-eye">KAM POLETÍME</div><h2 id="lp-h">Letenkové poklady</h2><p>Jen daleké lety, kde se letenka opravdu vyplatí. Zpáteční ceny z posledních hodin z Prahy a okolních letišť. Ubytování si zařídíš sám.</p></div>'+
+    '<div class="lp-head"><div class="lp-eye">KAM POLETÍME</div><h2 id="lp-h">Letenkové poklady</h2><p>Jen daleké lety, přímé nebo s jedním přestupem. Zpáteční ceny z posledních hodin z Prahy a okolních letišť. Cenu i se zavazadlem uvidíš po kliknutí, rezervuješ česky na Kiwi.com.</p></div>'+
     '<div class="lp-chips" id="lpReg">'+[['','Všude'],['asie','Asie'],['arabie','Arábie'],['amerika','Amerika'],['afrika','Afrika a ostrovy'],['biz','Business class']].map(function(c,i){return '<button type="button" data-r="'+c[0]+'" aria-pressed="'+(i===0)+'">'+c[1]+'</button>';}).join('')+'</div>'+
     '<div class="lp-chips small" id="lpAir">'+airs.map(function(a,i){return '<button type="button" data-a="'+a+'" aria-pressed="'+(i===0)+'">'+(a?AIR_FROM[a]:'odkudkoli')+'</button>';}).join('')+'</div>'+
     '<div class="lr-list" id="lpGrid"></div><button type="button" class="lp-more" id="lpMore">Ukázat další destinace</button></div></section>';

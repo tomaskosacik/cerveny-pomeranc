@@ -372,6 +372,17 @@ async function flights() {
   const CTRY = new Proxy({}, { get: (_, code) => { try { return code ? DN.of(String(code)) : ''; } catch { return ''; } } });
   const CS = { WAW: 'Varšava', MIL: 'Milán', VCE: 'Benátky', ROM: 'Řím', LON: 'Londýn', PAR: 'Paříž', BCN: 'Barcelona', MAD: 'Madrid', LIS: 'Lisabon', ATH: 'Atény', IST: 'Istanbul', BER: 'Berlín', MUC: 'Mnichov', VIE: 'Vídeň', PRG: 'Praha', BRU: 'Brusel', AMS: 'Amsterdam', CPH: 'Kodaň', STO: 'Stockholm', OSL: 'Oslo', HEL: 'Helsinky', REK: 'Reykjavík', DUB: 'Dublin', EDI: 'Edinburgh', NAP: 'Neapol', FLR: 'Florencie', PMO: 'Palermo', CTA: 'Catania', BRI: 'Bari', NCE: 'Nice', MRS: 'Marseille', LYS: 'Lyon', GVA: 'Ženeva', ZRH: 'Curych', MLA: 'Malta', LCA: 'Larnaka', PFO: 'Paphos', TLV: 'Tel Aviv', CAI: 'Káhira', HRG: 'Hurghada', SSH: 'Šarm aš-Šajch', RAK: 'Marrákeš', AGA: 'Agadir', TFS: 'Tenerife', LPA: 'Gran Canaria', ACE: 'Lanzarote', FUE: 'Fuerteventura', PMI: 'Mallorca', IBZ: 'Ibiza', AGP: 'Málaga', ALC: 'Alicante', VLC: 'Valencie', SVQ: 'Sevilla', OPO: 'Porto', FAO: 'Faro', FNC: 'Madeira', DXB: 'Dubaj', AUH: 'Abú Dhabí', DOH: 'Dauhá', MCT: 'Maskat', BKK: 'Bangkok', HKT: 'Phuket', DPS: 'Bali', SIN: 'Singapur', HKG: 'Hongkong', TYO: 'Tokio', SEL: 'Soul', PEK: 'Peking', SHA: 'Šanghaj', KUL: 'Kuala Lumpur', MLE: 'Maledivy', CMB: 'Kolombo', DEL: 'Dillí', NYC: 'New York', LAX: 'Los Angeles', MIA: 'Miami', SFO: 'San Francisco', CHI: 'Chicago', YTO: 'Toronto', YMQ: 'Montreal', CUN: 'Cancún', HAV: 'Havana', PUJ: 'Punta Cana', SDQ: 'Santo Domingo', ZNZ: 'Zanzibar', SEZ: 'Seychely', MRU: 'Mauricius', CPT: 'Kapské Město', NBO: 'Nairobi', SID: 'Kapverdy', TIA: 'Tirana', SPU: 'Split', DBV: 'Dubrovník', ZAG: 'Záhřeb', BEG: 'Bělehrad', SOF: 'Sofie', VAR: 'Varna', BOJ: 'Burgas', OTP: 'Bukurešť', RHO: 'Rhodos', HER: 'Kréta', CFU: 'Korfu', KGS: 'Kos', ZTH: 'Zakynthos', JMK: 'Mykonos', JTR: 'Santorini', SKG: 'Soluň', AYT: 'Antalya', DLM: 'Dalaman', BJV: 'Bodrum', TBS: 'Tbilisi', EVN: 'Jerevan', BUD: 'Budapešť', KRK: 'Krakov', KTW: 'Katovice', BTS: 'Bratislava', RIX: 'Riga', TLL: 'Tallinn', VNO: 'Vilnius', SJJ: 'Sarajevo', TGD: 'Podgorica', OHD: 'Ochrid', MAN: 'Manchester', LIV: 'Liverpool', BUE: 'Buenos Aires', RIO: 'Rio de Janeiro', SAO: 'São Paulo', LIM: 'Lima', BOG: 'Bogotá', SYD: 'Sydney', MEL: 'Melbourne', AKL: 'Auckland', MNL: 'Manila', SGN: 'Ho Či Minovo Město', HAN: 'Hanoj', REP: 'Siem Reap', KTM: 'Káthmándú', TFN: 'Tenerife', KEF: 'Reykjavík', RVN: 'Rovaniemi' };
   const rows = [], log = [];
+  // Kiwi.com (česky, Kč, 3 % provize): partnerský odkaz si necháme vyrobit přes API, ať máme správné parametry programu
+  let KIWI = null;
+  if (TOKEN && TP.kiwi !== false) {
+    try {
+      const r = await fetch('https://api.travelpayouts.com/links/v1/create', { method: 'POST', headers: { 'X-Access-Token': TOKEN, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trs: +TP.trs, marker: +TP.marker, shorten: false, links: [{ url: 'https://www.kiwi.com/deep?from=PRG&to=BKK&lang=cz&currency=CZK' }] }) });
+      const j = await r.json(); const pu = j?.result?.links?.[0]?.partner_url || '';
+      if (/^https:\/\/tp\.media\/r\?/.test(pu)) { const u = new URL(pu); u.searchParams.delete('u'); KIWI = u.toString() + '&u='; log.push('kiwi odkazy: ' + KIWI); }
+      else log.push('kiwi odkazy: nepodařilo se (' + JSON.stringify(j).slice(0, 200) + ') – zůstává Aviasales');
+    } catch (e) { log.push('kiwi odkazy: CHYBA ' + e.message + ' – zůstává Aviasales'); }
+  }
   const RUNS = ORIGINS.map((o) => [o, 0]).concat((TP.business || ['PRG', 'VIE', 'BUD']).map((o) => [o, 1]));
   for (const [o, cls] of RUNS) {
     let data = [];
@@ -406,7 +417,9 @@ async function flights() {
         if (seenM.has(m)) continue; seenM.add(m);
         const dd = (s) => s.slice(8, 10) + s.slice(5, 7);
         const search = `https://www.aviasales.com/search/${o}${dd(f.depart_date)}${dst}${dd(f.return_date)}${cls ? 'c' : ''}1?currency=czk&locale=cs`;
-        const link = `https://tp.media/r?marker=${TP.marker}&trs=${TP.trs}&p=4114&campaign_id=100&u=${encodeURIComponent(search)}`;
+        const dk = (x) => x.slice(8, 10) + '-' + x.slice(5, 7) + '-' + x.slice(0, 4);
+        const kiwi = `https://www.kiwi.com/deep?from=${o}&to=${dst}&departure=${dk(f.depart_date)}&return=${dk(f.return_date)}&lang=cz&currency=CZK&adults=1&bags=1&stopNumber=1~true${cls ? '&cabinClass=BUSINESS-false' : ''}`;
+        const link = KIWI ? KIWI + encodeURIComponent(kiwi) : `https://tp.media/r?marker=${TP.marker}&trs=${TP.trs}&p=4114&campaign_id=100&u=${encodeURIComponent(search)}`;
         rows.push([o, dst, city, CTRY[c.country_code] || c.country_code || '', f.depart_date.slice(0, 10), f.return_date.slice(0, 10), Math.round(f.value), Math.round(mid), f.number_of_changes ?? null, link, c.coordinates ? [c.coordinates.lat, c.coordinates.lon] : null, f.distance || null, f.airline || '', cls]);
         if (seenM.size >= ((f.distance || 0) > 3000 ? 6 : 3)) break;
       }
