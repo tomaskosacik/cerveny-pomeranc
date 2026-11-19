@@ -233,6 +233,13 @@ export async function onRequest(ctx) {
         return J({ msgs });
       }
       case 'notify': return J(await notify(env, req));
+      case 'stats': {
+        const ck = new Request(new URL('/api/stats', req.url)), cache = caches.default;
+        const hit = await cache.match(ck); if (hit) return hit;
+        let n = 0, cursor; do { const l = await env.PUSH.list({ prefix: 'sub:', cursor, limit: 1000 }); n += l.keys.length; cursor = l.list_complete ? null : l.cursor; } while (cursor);
+        const res = J({ upozorneni: n, cas: new Date().toISOString() });
+        res.headers.set('cache-control', 'public, max-age=600'); await cache.put(ck, res.clone()); return res;
+      }
       default: return J({ error: 'neznámá cesta' }, 404);
     }
   } catch (e) {
