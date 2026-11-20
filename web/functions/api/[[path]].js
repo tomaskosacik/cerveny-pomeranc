@@ -195,7 +195,7 @@ async function statsDb(env) {
   }
   return env.STATS;
 }
-const EVS = new Set(['view', 'detail', 'click', 'inst_show', 'inst_ok', 'push_on', 'app_first', 'search', 'share', 'watch']);
+const EVS = new Set(['view', 'detail', 'click', 'inst_show', 'inst_ok', 'push_on', 'app_first', 'search', 'share', 'watch', 'seen', 'stay']);
 const cut = (v, n) => (v == null ? null : String(v).slice(0, n));
 async function logEvents(env, req, body) {
   const db = await statsDb(env); if (!db) return;
@@ -215,7 +215,7 @@ async function prehled(env) {
   const out = { gen: new Date().toISOString(), db: !!db };
   if (db) {
     const q = (sql, ...a) => db.prepare(sql).bind(...a).all().then((r) => r.results);
-    [out.days, out.appDays, out.src, out.clicksBy, out.topDest, out.ctry, out.inst] = await Promise.all([
+    [out.days, out.appDays, out.src, out.clicksBy, out.topDest, out.ctry, out.inst, out.seen, out.stay] = await Promise.all([
       q("SELECT day, ev, COUNT(*) n, COUNT(DISTINCT uid) u, SUM(v) v FROM ev WHERE day >= ? GROUP BY day, ev ORDER BY day", d0),
       q("SELECT day, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND app = 1 GROUP BY day", d0),
       q("SELECT COALESCE(src,'přímo') src, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev = 'view' GROUP BY 1 ORDER BY 2 DESC LIMIT 12", d0),
@@ -223,6 +223,8 @@ async function prehled(env) {
       q("SELECT x, COUNT(*) n FROM ev WHERE day >= ? AND ev IN ('detail','click') AND x IS NOT NULL GROUP BY x ORDER BY 2 DESC LIMIT 12", d0),
       q("SELECT COALESCE(ctry,'?') c, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev = 'view' GROUP BY 1 ORDER BY 2 DESC LIMIT 8", d0),
       q("SELECT COALESCE(k,'?') k, ev, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev IN ('inst_show','inst_ok') GROUP BY 1,2", d0),
+      q("SELECT day, k, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND ev = 'seen' GROUP BY 1,2", d0),
+      q("SELECT day, v, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND ev = 'stay' GROUP BY 1,2", d0),
     ]);
   }
   // odběratelé upozornění

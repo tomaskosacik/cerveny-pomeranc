@@ -44,6 +44,7 @@ tr:last-child td{border-bottom:0}.bar{height:6px;background:var(--or2);border-ra
     <section><h2>Upozornění</h2><table id="subs"></table></section>
     <section><h2>Data na webu</h2><table id="data"></table></section>
   </div>
+  <section><h2>Co lidé na webu dělají <small id="engR"></small></h2><table id="eng"></table><p class="note">Kolik z lidí, kteří přišli, zůstalo a kam až na stránce dojeli.</p></section>
   <section><h2>Země návštěvníků <small>30 dní</small></h2><table id="ctry"></table></section>
 </main>
 </div>
@@ -93,6 +94,12 @@ function render(){
   var S=D.subs;$('subs').innerHTML='<tr><td>Celkem zařízení</td><td>'+fmt(S.total)+'</td></tr><tr><td>Ranní poklady + novinky přes den</td><td>'+fmt(S.daily)+'</td></tr><tr><td>Hlídají cenu hotelu</td><td>'+fmt(S.watching)+' lidí · '+fmt(S.watches)+' hotelů</td></tr><tr><td>Nových za 7 dní</td><td>'+fmt(S.new7)+'</td></tr>'+
     Object.keys(S.air).sort(function(x,y){return S.air[y]-S.air[x]}).map(function(k){return '<tr><td>&nbsp;&nbsp;letiště '+esc(k)+'</td><td>'+fmt(S.air[k])+'</td></tr>'}).join('');
   rows('ctry',D.ctry.map(function(x){return [x.c,x.u]}));
+  var SN={dnes:'Dnešní tucet',zima:'Útěk ze zimy',luxus:'Luxus ve slevě',kam:'Kam to bude?',letenky:'Letenkové poklady',chytaky:'Chytáky',nalada:'Podle nálady',vypis:'Celý výpis',ranni:'Ranní poklady (upozornění)'};
+  var inR=function(r){return days.indexOf(r.day)>=0};var st=function(v){return (D.stay||[]).filter(function(r){return inR(r)&&r.v===v}).reduce(function(s,r){return s+r.u},0)};
+  var sk={};(D.seen||[]).filter(inR).forEach(function(r){sk[r.k]=(sk[r.k]||0)+r.u});
+  var pct=function(n){return ppl?Math.round(n/ppl*100)+' %':'–'};$('engR').textContent=lbl;
+  var er=[['Zůstali aspoň 15 s',st(15)],['Zůstali aspoň 1 minutu',st(60)],['Zůstali aspoň 3 minuty',st(180)]].concat(['dnes','zima','luxus','kam','letenky','chytaky','nalada','vypis','ranni'].filter(function(k){return sk[k]}).map(function(k){return ['Dojeli k: '+SN[k],sk[k]]}));
+  $('eng').innerHTML=er.map(function(x){return '<tr><td>'+esc(x[0])+'<div class="bar"><i style="width:'+(ppl?Math.min(100,Math.round(x[1]/ppl*100)):0)+'%"></i></div></td><td>'+fmt(x[1])+' · '+pct(x[1])+'</td></tr>'}).join('')||'<tr><td class="empty">Zatím nic.</td></tr>';
   if(M){var hot=M.h.length,ter=M.o.length,g=new Date(M.gen),nx=M.next?new Date(M.next):null;
     $('data').innerHTML='<tr><td>Poslední aktualizace</td><td>'+g.toLocaleString('cs-CZ',{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})+'</td></tr>'+(nx?'<tr><td>Další</td><td>'+nx.toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'})+'</td></tr>':'')+'<tr><td>Hotelů</td><td>'+fmt(hot)+'</td></tr><tr><td>Termínů</td><td>'+fmt(ter)+'</td></tr>'+(F?'<tr><td>Letenek</td><td>'+fmt(F.f.length)+'</td></tr>':'')+(D.notify&&D.notify.lastRun?'<tr><td>Poslední rozeslání upozornění</td><td>'+(D.notify.lastRun.sent||0)+' zařízení'+(D.notify.lastRun.flash?' · novinka':'')+(D.notify.lastRun.daily?' · ranní':'')+'</td></tr>':'');}
 }
@@ -103,7 +110,7 @@ function load(){
     fetch('/data/main.json',{cache:'no-cache'}).then(function(r){return r.json()}).catch(function(){return null}),
     fetch('/data/flights.json',{cache:'no-cache'}).then(function(r){return r.json()}).catch(function(){return null})
   ]).then(function(x){D=x[0];M=x[1];F=x[2];$('app').hidden=false;
-    if(!D.db){D.days=[];D.appDays=[];D.src=[];D.clicksBy=[];D.topDest=[];D.ctry=[];D.inst=[];}
+    if(!D.db){D.days=[];D.appDays=[];D.src=[];D.clicksBy=[];D.topDest=[];D.ctry=[];D.inst=[];}D.seen=D.seen||[];D.stay=D.stay||[];
     $('gen').textContent='Stav k '+new Date(D.gen).toLocaleTimeString('cs-CZ',{hour:'2-digit',minute:'2-digit'})+(D.db?'':' · měření návštěv ještě není zapnuté');render();})
   .catch(function(e){if(e==='key'){try{localStorage.removeItem('cp_prehled')}catch(_){};$('login').hidden=false;$('app').hidden=true;$('gen').textContent='';}else $('gen').textContent='Nepodařilo se načíst, zkus Obnovit.';});
 }

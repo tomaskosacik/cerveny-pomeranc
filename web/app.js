@@ -945,6 +945,11 @@ function home(){
   if(!DEMO) window.__cpRefresh=function(){window.__cpRefresh=null;setTimeout(function(){fetch('data/main.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(J){if(J.gen!==DATA.gen){if(document.hidden)location.reload();else toast('Je tu nový tucet – obnov stránku');}});},5*60e3);};
   setTimeout(function(){try{localStorage.setItem('cp_last',Date.now())}catch(e){}},5000);
   // odkaz z vánoční reklamy: #darek = malé zájezdy pod stromeček
+  // měření zapojení: jak daleko lidé dojdou a jak dlouho zůstanou
+  if('IntersectionObserver' in window){var SEEN={};var io=new IntersectionObserver(function(es){es.forEach(function(en){var id=en.target.id;if(en.isIntersecting&&!SEEN[id]){SEEN[id]=1;cpEv('seen',{k:id});io.unobserve(en.target);}});},{threshold:0.25});
+    ['dnes','zima','luxus','kam','letenky','chytaky','nalada','vypis','ranni'].forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});
+    setTimeout(function(){var el=document.getElementById('letenky');if(el)io.observe(el);},1500);}
+  [15,60,180].forEach(function(s){setTimeout(function(){if(!document.hidden)cpEv('stay',{v:s});},s*1000);});
   if(location.hash==='#darek') setTimeout(function(){window.__showFn(function(o){return o.type==='package'&&o.ppp<=10000&&daysTo(o)>=20;},'🎁 Pod stromeček: zájezdy do 10 000 Kč na osobu');},300);
 }
 
