@@ -302,6 +302,7 @@ if(window.caches) caches.open('cp-seen').then(function(c){return c.delete('/__ba
 function isWatched(gid){return WATCH.indexOf(gid)>=0;}
 function toggleWatch(o,btn){
   var gid=o.hotel&&o.hotel.gid; if(!gid) return;
+  if(!isWatched(gid)&&IS_IOS&&!IS_APP){showInstall('watch',o.hotel.name);return;}
   if(isWatched(gid)){
     api('unwatch',{id:PUSH_ID,gid:gid}).catch(function(){});
     WATCH=WATCH.filter(function(x){return x!==gid});saveWatch();btn.textContent='🔔 Hlídat cenu';toast('Hlídání zrušeno');return;
@@ -336,13 +337,20 @@ function installMode(){
 var SHARE_ICO='<svg viewBox="0 0 24 24" width="22" height="22" style="vertical-align:-5px;color:#0a84ff" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>';
 var PLUS_ICO='<span style="display:inline-grid;place-items:center;width:20px;height:20px;border:1.8px solid currentColor;border-radius:5px;font-weight:800;line-height:1;vertical-align:-4px">+</span>';
 function hideInstall(){var el=document.getElementById('isheet');if(el)el.remove();}
-function showInstall(why){
+var INST_T={
+  auto:['Přidej si Pomeranč na plochu','Každé ráno poklady dne, na ikoně uvidíš, kolik přibylo nových nabídek. Zdarma, bez registrace.'],
+  save:['Uloženo ♥ Chceš ho mít po ruce?','Přidej si Pomeranč na plochu. Uložené nabídky najdeš jedním klepnutím a dáme vědět, když něco výrazně zlevní.'],
+  detail:['Chceš vědět, až to zlevní?','Přidej si Pomeranč na plochu. Pohlídáme ceny a pošleme ti jen opravdové poklady, žádný spam.'],
+  watch:['Hlídání ceny funguje z ikony na ploše','Na iPhonu umí upozornění jen Pomeranč z plochy. Přidej si ho, otevři z ikony a u hotelu klepni znovu na 🔔. Jakmile zlevní, cinkne ti to.'],
+  manual:['Přidej si Pomeranč na plochu','Každé ráno poklady dne, na ikoně uvidíš, kolik přibylo nových nabídek. Zdarma, bez registrace.']
+};
+function showInstall(why,name){
   var mode=installMode();
   if(mode) cpEv('inst_show',{k:mode,src:why});
   if(!mode){ if(why==='manual') toast(IS_APP?'Pomeranč už máš na ploše 🍊':'Na počítači stačí záložka. Na plochu si Pomeranč přidej v mobilu.'); return; }
   hideInstall();
   var el=document.createElement('div');el.id='isheet';el.className='isheet'+(mode==='ios'?' ios':'');el.setAttribute('role','dialog');el.setAttribute('aria-label','Přidat Pomeranč na plochu');
-  var head='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>Přidej si Pomeranč na plochu</b><span>Každé ráno poklady dne, na ikoně uvidíš, kolik přibylo nových nabídek. Zdarma, bez registrace.</span></div></div>';
+  var head='<button type="button" class="ix" aria-label="Zavřít">✕</button><div class="ih"><img src="/icon-192.png?v=2" alt="" width="52" height="52"><div><b>'+(INST_T[why]||INST_T.auto)[0]+'</b><span>'+(INST_T[why]||INST_T.auto)[1].replace('{h}',esc(name||'tenhle hotel'))+'</span></div></div>';
   var body='';
   if(mode==='prompt') body='<button type="button" class="btn or ibtn" data-i="prompt">📲 Přidat na plochu</button>';
   else if(mode==='ios') body='<ol class="isteps"><li>Klepni dole na '+SHARE_ICO+' <b>Sdílet</b></li><li>Sjeď níž a vyber '+PLUS_ICO+' <b>Přidat na plochu</b></li><li>Vpravo nahoře klepni na <b>Přidat</b></li></ol><div class="iarrow" aria-hidden="true">↓</div>';
@@ -361,13 +369,20 @@ function showInstall(why){
     if(a==='safari') location.href='x-safari-'+location.href;
   });
 }
+var DET_N=0;
+function detailNudge(){
+  DET_N++; if(DET_N!==2||IS_APP||!IS_MOBILE||lsGet('cp_installed')) return;
+  if(Date.now()-(+lsGet('cp_inst_nudge')||0)<2*86400e3) return;
+  lsSet('cp_inst_nudge',Date.now()); window.__instShown=1;
+  setTimeout(function(){showInstall('detail');},1500);
+}
 function autoInstall(){
   if(IS_APP||!IS_MOBILE||lsGet('cp_installed')) return;
   var d=+lsGet('cp_inst_dismiss')||0; if(Date.now()-d<3*86400e3) return;
-  var done=false;function go(){if(done)return;done=true;lsSet('cp_inst_dismiss',Date.now());window.removeEventListener('scroll',onS);showInstall('auto');}
+  var done=false;function go(){if(done||window.__instShown)return;done=true;lsSet('cp_inst_dismiss',Date.now());window.removeEventListener('scroll',onS);showInstall('auto');}
   function onS(){if(window.scrollY>900)go();}
   window.addEventListener('scroll',onS,{passive:true});
-  setTimeout(go,IN_APP?4000:9000);
+  setTimeout(go,IN_APP?6000:45000);
 }
 // první spuštění z plochy: poděkovat a nabídnout ranní poklady
 function welcomeApp(){
@@ -455,7 +470,7 @@ function linkOf(o){
 var saved; try{saved=JSON.parse(localStorage.getItem('cp_saved')||'[]')}catch(e){saved=[]}
 function isSaved(id){return saved.indexOf(id)>=0;}
 function syncSaved(){var el=$('tbSaved');if(el)el.textContent=saved.length;}
-function toggleSave(id){var i=saved.indexOf(id);if(i>=0)saved.splice(i,1);else saved.push(id);try{localStorage.setItem('cp_saved',JSON.stringify(saved))}catch(e){}syncSaved();toast(i>=0?'Odebráno z uložených':'Uloženo ♥');if(i<0&&!IS_APP&&IS_MOBILE&&!lsGet('cp_installed'))setTimeout(function(){showInstall('save');},1200);document.querySelectorAll('[data-save="'+id+'"]').forEach(function(b){b.setAttribute('aria-pressed',isSaved(id))});}
+function toggleSave(id){var i=saved.indexOf(id);if(i>=0)saved.splice(i,1);else saved.push(id);try{localStorage.setItem('cp_saved',JSON.stringify(saved))}catch(e){}syncSaved();toast(i>=0?'Odebráno z uložených':'Uloženo ♥');if(i<0&&!IS_APP&&IS_MOBILE&&!lsGet('cp_installed')){window.__instShown=1;setTimeout(function(){showInstall('save');},1200);}document.querySelectorAll('[data-save="'+id+'"]').forEach(function(b){b.setAttribute('aria-pressed',isSaved(id))});}
 syncSaved();
 
 // ------------------------------------------------------------------ grafika
@@ -516,6 +531,7 @@ function route(o){if(!o.d.fly||!AIR[o.air])return '';return '<div class="dsec ro
 function kv(pairs){return '<div class="kv">'+pairs.map(function(p){return '<div><span>'+p[0]+'</span><b>'+p[1]+'</b></div>';}).join('')+'</div>';}
 function openOffer(id,noHash){
   var o=byId(id); if(!o)return;
+  detailNudge();
   cpEv('detail',{k:o.type,x:o.d?o.d.ctry:'',v:o.ppp});
   var pax=+(($('fPax')||{}).value||2), ad=pax>=3?2:pax, kids=Math.max(0,pax-2);
   var total=o.type==='hotel'?o.ppp*o.n:o.ppp*ad+(o.type==='flight'?o.ppp*kids:Math.round(o.ppp*.45)*kids);
@@ -593,6 +609,7 @@ setInterval(tick,1000); tick();
 // ------------------------------------------------------------------ globální kliky
 document.addEventListener('click',function(e){
   var s=e.target.closest('[data-save]');if(s){e.stopPropagation();toggleSave(+s.getAttribute('data-save'));return;}
+  var w=e.target.closest('[data-watch]');if(w){e.stopPropagation();e.preventDefault();var wo=byId(+w.getAttribute('data-watch'));if(wo){var tb=w;var fake={set textContent(v){tb.textContent=v.replace('🔔 Hlídat cenu','🔔 hlídat cenu').replace('✓ Hlídáš cenu','✓ hlídáš');tb.setAttribute('aria-pressed',/✓/.test(v));},get disabled(){return tb.disabled},set disabled(v){tb.disabled=v}};toggleWatch(wo,fake);cpEv('watch',{x:wo.d?wo.d.ctry:''});}return;}
   if(e.target.closest('[data-act]')) return;
   var o=e.target.closest('[data-open]');if(o)openOffer(o.getAttribute('data-open'));
 });
@@ -701,7 +718,7 @@ function home(){
       '<div class="th">'+esc(o.hotel.name)+' <span class="st">'+'★'.repeat(o.hotel.stars)+'</span>'+(o.hotel.rating?' <span class="rt">'+rate(o)+'</span>':'')+'</div>'+
       '<div class="tf mono">'+[AIR_FROM[o.air]||o.air,dc(o.dep)+'–'+dc(o.ret),nights(o.n),BOARD[o.board]||''].filter(Boolean).join(' · ')+(extra?' '+extra:'')+'</div>'+
       (f.length?'<ul class="tw">'+f.slice(0,1).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+'</div>'+
-      '<div class="tp"><div class="p num">'+kc(o.ppp)+'</div><small>'+kc(o.ppn)+' / noc</small>'+mini(o)+'</div></article>';
+      '<div class="tp"><div class="p num">'+kc(o.ppp)+'</div><small>'+kc(o.ppn)+' / noc</small>'+mini(o)+(!DEMO&&o.hotel.gid?'<button type="button" class="tbell" data-watch="'+o.id+'" aria-pressed="'+isWatched(o.hotel.gid)+'">'+(isWatched(o.hotel.gid)?'✓ hlídáš':'🔔 hlídat cenu')+'</button>':'')+'</div></article>';
   }
 
   // ---------------------------------------------------------- dnešní tucet

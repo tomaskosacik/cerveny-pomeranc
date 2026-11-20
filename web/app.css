@@ -578,3 +578,6 @@ footer nav{display:flex;gap:16px;flex-wrap:wrap}
 .dnes .stats{margin:4px 0 14px}
 button.stat{background:none;border:0;border-left:1px solid var(--line);text-align:left;cursor:pointer;color:inherit;font:inherit}
 button.stat:hover .k{color:var(--orange)}
+.tbell{margin-top:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer}
+.tbell[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+@media (max-width:760px){.tbell{margin-top:0}}
