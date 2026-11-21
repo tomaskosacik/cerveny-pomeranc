@@ -589,3 +589,5 @@ button.stat:hover .k{color:var(--orange)}
 .lk-no{border:0;background:none;color:var(--mute);font-size:13px;text-decoration:underline;padding:6px;cursor:pointer}
 .cg .lockbox{grid-column:1/-1}
 @media (max-width:760px){.cg .lockbox{grid-column:auto;min-width:82%}}
+
+footer .fdest{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;margin:8px 0}footer .fdest b{font-weight:700}

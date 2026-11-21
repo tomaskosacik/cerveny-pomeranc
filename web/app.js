@@ -818,6 +818,8 @@ function home(){
     if(fl.length) h+='<div class="kfl" data-open="'+fl[0].id+'" tabindex="0"><span class="mono">✈ JEN LETENKA</span><b>'+esc((AIR[fl[0].air]||fl[0].air)+' → '+fl[0].d.city)+'</b><span>'+ds(fl[0].dep)+' – '+ds(fl[0].ret)+(fl[0].direct?' · přímý':' · s přestupem')+'</span><b class="num">'+kc(fl[0].ppp)+'</b></div>';
     var rel=(REL[main]||[]).filter(function(c){return CM[c];});
     if(rel.length) h+='<div class="krel"><span>Kdo hledá '+esc(nick(main))+', kouká i na:</span>'+rel.map(function(c){return '<button type="button" data-k="'+esc(c)+'">'+esc(nick(c))+' <span class="mono">od '+kc(CM[c].min)+'</span></button>';}).join('')+'</div>';
+    var SEOC={'Egypt':'egypt','Řecko':'recko','Turecko':'turecko','Spojené arabské emiráty':'emiraty','Thajsko':'thajsko','Itálie':'italie','Bulharsko':'bulharsko','Kanárské ostrovy':'kanarske-ostrovy','Kypr':'kypr','Dominikánská republika':'dominikanska-republika','Mexiko':'mexiko','Španělsko':'spanelsko','Maledivy':'maledivy','Kuba':'kuba','Mauricius':'mauricius','Tunisko':'tunisko','Zanzibar':'zanzibar','Srí Lanka':'sri-lanka','Seychely':'seychely','Portugalsko':'portugalsko','Omán':'oman','Kapverdské ostrovy':'kapverdy','Indonésie':'indonesie'};
+    if(main&&SEOC[main]) h+='<a class="btn ghost kall" href="/dovolena/'+SEOC[main]+'/" style="margin-right:8px">Kdy je '+esc(nick(main))+' nejlevněji →</a>';
     if(hit.length>5) h+='<button type="button" class="btn ghost kall" data-kall="'+esc(q)+'">Všech '+hit.length+' hotelů →</button>';
     $('kout').innerHTML=h;
     if(scroll) $('kam').scrollIntoView({behavior:reduce?'auto':'smooth',block:'start'});

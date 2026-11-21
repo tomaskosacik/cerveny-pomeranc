@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /prehled.html
 Disallow: /api/
+Sitemap: https://cervenypomeranc.cz/sitemap.xml

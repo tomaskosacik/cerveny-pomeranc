@@ -31,14 +31,18 @@ jobs:
         working-directory: feeds
         env:
           TP_TOKEN: ${{ secrets.TP_TOKEN }}
+      - run: node seo.mjs
+        working-directory: feeds
       - name: Sestavení webu
         run: |
           rm -rf dist && mkdir -p dist/_state
           cp -r web/. dist/
           cp -r feeds/out/web dist/data
+          cp -r feeds/out/seo/. dist/
+          rm -f dist/seo-report.txt && cp feeds/out/seo/seo-report.txt dist/_state/seo-report.txt
           cp feeds/state/prices.json dist/_state/prices.json
           cp feeds/out/report.txt dist/_state/report.txt
-          V=$(date -u +%Y%m%d%H%M); for f in dist/*.html dist/destinace/*.html; do sed -i "s#app.js\"#app.js?v=$V\"#; s#app.css\"#app.css?v=$V\"#" "$f"; done
+          V=$(date -u +%Y%m%d%H%M); for f in dist/*.html; do sed -i "s#app.js\"#app.js?v=$V\"#; s#app.css\"#app.css?v=$V\"#" "$f"; done
           printf '/data/*\n  Cache-Control: public, max-age=300\n/_state/*\n  X-Robots-Tag: noindex\n' > dist/_headers
       - name: Nasazení do větve site
         run: |
