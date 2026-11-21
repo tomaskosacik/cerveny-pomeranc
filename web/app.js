@@ -711,6 +711,14 @@ function home(){
     var cap=m[cw]&&m[cw].ppp<=best.ppp?'Nejlevnější týden v příštích '+W+' týdnech.':'Levněji vychází týden od '+ds(best.dep)+' ('+kc(best.ppp)+'), klikni na sloupec.';
     return '<div class="wk"><div class="wk-h mono">'+esc(o.d.ctry).toUpperCase()+' · '+nights(o.n).toUpperCase()+' · NEJNIŽŠÍ CENA PODLE TÝDNE ODLETU</div><svg viewBox="0 0 100 80" preserveAspectRatio="none" class="wk-s" role="img" aria-label="Ceny podle týdne odletu">'+bars+'</svg><div class="wk-x mono">'+lab+'</div><div class="wk-c">'+cap+'</div></div>';
   }
+  function histOrMini(o){
+    var h=o.hist||[];
+    if(h.length>=2&&Math.max.apply(null,h)!==Math.min.apply(null,h)){
+      var d=Math.round((h[h.length-1]-h[0])/h[0]*100);
+      return '<svg class="mbar" viewBox="0 0 84 30" preserveAspectRatio="none" aria-hidden="true">'+spark(h,84,30,false)+'</svg><small class="mcap">cena '+h.length+' dní'+(d?' · '+(d>0?'+':'−')+Math.abs(d)+' %':'')+'</small>';
+    }
+    return mini(o);
+  }
   function trow(o,i,extra){
     var f=facts(o);
     return '<article class="tr" data-open="'+o.id+'" tabindex="0" aria-label="'+esc(place(o)+', '+kc(o.ppp))+'">'+
@@ -719,7 +727,7 @@ function home(){
       '<div class="th">'+esc(o.hotel.name)+' <span class="st">'+'★'.repeat(o.hotel.stars)+'</span>'+(o.hotel.rating?' <span class="rt">'+rate(o)+'</span>':'')+'</div>'+
       '<div class="tf mono">'+[AIR_FROM[o.air]||o.air,dc(o.dep)+'–'+dc(o.ret),nights(o.n),BOARD[o.board]||''].filter(Boolean).join(' · ')+(extra?' '+extra:'')+'</div>'+
       (f.length?'<ul class="tw">'+f.slice(0,1).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>':'')+'</div>'+
-      '<div class="tp"><div class="p num">'+kc(o.ppp)+'</div><small>'+kc(o.ppn)+' / noc</small>'+mini(o)+(!DEMO&&o.hotel.gid?'<button type="button" class="tbell" data-watch="'+o.id+'" aria-pressed="'+isWatched(o.hotel.gid)+'">'+(isWatched(o.hotel.gid)?'✓ hlídáš':'🔔 hlídat cenu')+'</button>':'')+'</div></article>';
+      '<div class="tp"><div class="p num">'+kc(o.ppp)+'</div><small>'+kc(o.ppn)+' / noc</small>'+histOrMini(o)+(!DEMO&&o.hotel.gid?'<button type="button" class="tbell" data-watch="'+o.id+'" aria-pressed="'+isWatched(o.hotel.gid)+'">'+(isWatched(o.hotel.gid)?'✓ hlídáš':'🔔 hlídat cenu')+'</button>':'')+'</div></article>';
   }
 
   // ---------------------------------------------------------- dnešní tucet
