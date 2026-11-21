@@ -216,7 +216,7 @@ function offersHtml(p) {
 <div class="ol">${esc(place)}</div>
 <div class="of">${esc((AIRPORTS[t.air] || {}).name || t.air)} · ${dfmt(t.dep)}–${dfmt(addDays(t.dep, t.n || 7))} · ${t.n || '?'} nocí · ${esc(BOARD[t.board] || 'strava dle nabídky')}</div>
 ${why.length ? `<div class="ow">✓ ${esc(why.join(' · '))}</div>` : ''}</div>
-<div class="op"><b>${kc(t.price)}</b><small>za osobu</small>${t.url ? `<a class="go" href="${esc(t.url)}" target="_blank" rel="sponsored nofollow noopener" data-k="${t.p === 'd' ? 'Dovolená.cz' : 'Invia'}" data-x="${esc(h.co)}" data-v="${t.price}">Detail a cena →</a>` : ''}</div></article>`;
+<div class="op"><b>${kc(t.price)}</b><small>za osobu</small>${t.url ? `<a class="go" href="/api/go?u=${encodeURIComponent(t.url)}&amp;s=seo" target="_blank" rel="sponsored nofollow noopener" data-k="${t.p === 'd' ? 'Dovolená.cz' : 'Invia'}" data-x="${esc(h.co)}" data-v="${t.price}">Detail a cena →</a>` : ''}</div></article>`;
   }).join('\n')}</div>`;
 }
 

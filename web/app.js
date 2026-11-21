@@ -460,8 +460,9 @@ function sub(o){
   return (PAGE==='greece'?'★'.repeat(o.hotel.stars)+' · '+(o.hotel.rating?String(o.hotel.rating).replace('.',',')+'/10 · ':''):'')+nights(o.n)+' · '+BOARD[o.board];
 }
 function unit(o){return o.type==='hotel'?'/ noc za pokoj':o.type==='flight'?'zpáteční / os.':'/ osoba';}
+function goLink(u,s){return /^https:\/\//.test(u||'')?'/api/go?u='+encodeURIComponent(u)+(s?'&s='+encodeURIComponent(s):''):u;}
 function linkOf(o){
-  if(o.url) return o.url;
+  if(o.url) return goLink(o.url,'app');
   if(!DEMO) return '#';
   if(o.type==='flight') return 'https://www.kiwi.com/cz/';
   return INVIA+o.d.link+(INVIA_AID?'?aid='+encodeURIComponent(INVIA_AID):'');
@@ -579,7 +580,7 @@ function enrich(o){
     if($('dEyebrow').textContent.indexOf('#'+o.id+' ')<0) return;
     var H=D.h[o.hotel.gid], go=$('dGo');
     o.url=D.u[o.okey]||(H&&H.hu&&H.hu[o.partner])||null;
-    if(go&&o.url){go.href=o.url;go.removeAttribute('aria-disabled');go.style.opacity='';go.style.pointerEvents='';}
+    if(go&&o.url){go.href=goLink(o.url,'app');go.removeAttribute('aria-disabled');go.style.opacity='';go.style.pointerEvents='';}
     if(!D.u[o.okey]){ // mezitím proběhla aktualizace a termín zmizel
       var note=document.createElement('div');note.className='demo-note';
       note.innerHTML=H?'Ceny se mezitím aktualizovaly a tenhle termín už partner nemá. Tlačítko tě pošle na hotel, kde uvidíš aktuální termíny. <a href="#" onclick="location.reload();return false">Obnovit nabídky</a>':'Ceny se mezitím aktualizovaly a tahle nabídka už není dostupná. <a href="#" onclick="location.reload();return false">Obnovit nabídky</a>';

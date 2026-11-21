@@ -247,11 +247,36 @@ async function prehled(env) {
   return out;
 }
 
+// ------------------------------------------------------------ odchozí prokliky (/api/go)
+const GO_HOSTS = ['dovolena.cz', 'invia.cz', 'kiwi.com', 'tp.media', 'tp.st', 'aviasales.com', 'aviasales.ru', 'travelpayouts.com'];
+const BOT_RE = /bot|crawl|spider|slurp|preview|headless|lighthouse|facebookexternalhit|meta-external|python|curl|wget|httpclient|java\/|go-http|axios|node-fetch|okhttp|scrapy|semrush|ahrefs|mj12|dataforseo|bytespider|gptbot|claude|ccbot|petal|applebot|yandex|baidu|bing|google(?!.*mobile.*safari)|validator|monitor|checker/i;
+async function goOut(env, req, url) {
+  let t; try { t = new URL(url.searchParams.get('u') || ''); } catch { t = null; }
+  const ok = t && t.protocol === 'https:' && GO_HOSTS.some((h) => t.hostname === h || t.hostname.endsWith('.' + h));
+  if (!ok) return new Response('Neplatný odkaz', { status: 400 });
+  const ua = req.headers.get('user-agent') || '';
+  const hdr = { 'X-Robots-Tag': 'noindex, nofollow', 'Cache-Control': 'no-store' };
+  if (req.method !== 'GET' || !ua || BOT_RE.test(ua) || !/Mozilla\//.test(ua)) {
+    return new Response('<!doctype html><meta name="robots" content="noindex,nofollow"><title>Odkaz na partnera</title><p>Odkaz na nabídku partnera.</p>', { status: 200, headers: { ...hdr, 'Content-Type': 'text/html; charset=utf-8' } });
+  }
+  try {
+    const db = await statsDb(env);
+    if (db) {
+      const day = pragueNow().day, salt = (await vapid(env)).pub.slice(0, 12);
+      const uid = (await sha((req.headers.get('cf-connecting-ip') || '') + '|' + ua + '|' + day + '|' + salt)).slice(0, 16);
+      await db.prepare('INSERT INTO ev (ts,day,uid,ev,app,src,k,x,v,ctry) VALUES (?,?,?,?,?,?,?,?,?,?)')
+        .bind(Date.now(), day, uid, 'go', 0, cut(url.searchParams.get('s'), 60), t.hostname.replace(/^www\./, ''), null, null, (req.cf && req.cf.country) || null).run();
+    }
+  } catch (e) {}
+  return new Response(null, { status: 302, headers: { ...hdr, Location: t.href } });
+}
+
 // ------------------------------------------------------------ router
 export async function onRequest(ctx) {
   const { request: req, env } = ctx;
-  if (!env.PUSH) return J({ error: 'Push zatím není zapnutý (chybí KV PUSH).' }, 503);
   const url = new URL(req.url);
+  if (url.pathname === '/api/go') return goOut(env, req, url);
+  if (!env.PUSH) return J({ error: 'Push zatím není zapnutý (chybí KV PUSH).' }, 503);
   const path = url.pathname.replace(/^\/api\/?/, '');
   const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
   try {
