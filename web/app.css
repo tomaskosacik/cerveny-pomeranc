@@ -591,3 +591,10 @@ button.stat:hover .k{color:var(--orange)}
 @media (max-width:760px){.cg .lockbox{grid-column:auto;min-width:82%}}
 
 footer .fdest{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;margin:8px 0}footer .fdest b{font-weight:700}
+
+/* vánoční proužek s poukazem (do 24. 12.) */
+.xmas{display:flex;align-items:center;gap:12px;margin-top:14px;margin-bottom:4px;padding:12px 14px;border-radius:16px;text-decoration:none;color:var(--ink);background:var(--orange-soft);border:1px solid color-mix(in srgb,var(--orange) 35%,transparent);position:relative;overflow:hidden}
+.xmas:before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:repeating-linear-gradient(180deg,#b3261e 0 12px,#c99a3b 12px 15px)}
+.xm-i{font-size:26px;line-height:1;margin-left:4px}
+.xm-t{flex:1;min-width:0}.xm-t b{display:block;font:800 16px/1.2 var(--display)}.xm-t small{display:block;color:var(--ink-2);font-size:13px;margin-top:2px}
+.xm-a{font-weight:800;color:var(--orange);font-size:20px}
