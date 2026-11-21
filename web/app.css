@@ -581,3 +581,11 @@ button.stat:hover .k{color:var(--orange)}
 .tbell{margin-top:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:700;white-space:nowrap;cursor:pointer}
 .tbell[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 @media (max-width:760px){.tbell{margin-top:0}}
+.lk{filter:blur(7px);pointer-events:none;user-select:none;opacity:.85}
+.lockbox{position:relative;z-index:2;margin:14px 0;border:1.5px solid var(--ink);background:var(--surface);border-radius:18px;padding:18px 18px 14px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px;box-shadow:0 14px 40px -18px rgba(0,0,0,.35)}
+.lockbox b{font-family:var(--display);font-size:22px;letter-spacing:-.02em;line-height:1.15}
+.lockbox p{margin:0 0 6px;color:var(--ink-2);font-size:14px;max-width:40ch}
+.lk-i{font-size:26px}
+.lk-no{border:0;background:none;color:var(--mute);font-size:13px;text-decoration:underline;padding:6px;cursor:pointer}
+.cg .lockbox{grid-column:1/-1}
+@media (max-width:760px){.cg .lockbox{grid-column:auto;min-width:82%}}

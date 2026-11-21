@@ -195,7 +195,7 @@ async function statsDb(env) {
   }
   return env.STATS;
 }
-const EVS = new Set(['view', 'detail', 'click', 'inst_show', 'inst_ok', 'push_on', 'app_first', 'search', 'share', 'watch', 'seen', 'stay']);
+const EVS = new Set(['view', 'detail', 'click', 'inst_show', 'inst_ok', 'push_on', 'app_first', 'search', 'share', 'watch', 'seen', 'stay', 'ab', 'lock_cta', 'unlock']);
 const cut = (v, n) => (v == null ? null : String(v).slice(0, n));
 async function logEvents(env, req, body) {
   const db = await statsDb(env); if (!db) return;
@@ -215,7 +215,7 @@ async function prehled(env) {
   const out = { gen: new Date().toISOString(), db: !!db };
   if (db) {
     const q = (sql, ...a) => db.prepare(sql).bind(...a).all().then((r) => r.results);
-    [out.days, out.appDays, out.src, out.clicksBy, out.topDest, out.ctry, out.inst, out.seen, out.stay] = await Promise.all([
+    [out.days, out.appDays, out.src, out.clicksBy, out.topDest, out.ctry, out.inst, out.seen, out.stay, out.ab] = await Promise.all([
       q("SELECT day, ev, COUNT(*) n, COUNT(DISTINCT uid) u, SUM(v) v FROM ev WHERE day >= ? GROUP BY day, ev ORDER BY day", d0),
       q("SELECT day, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND app = 1 GROUP BY day", d0),
       q("SELECT COALESCE(src,'přímo') src, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev = 'view' GROUP BY 1 ORDER BY 2 DESC LIMIT 12", d0),
@@ -225,6 +225,7 @@ async function prehled(env) {
       q("SELECT COALESCE(k,'?') k, ev, COUNT(DISTINCT uid||day) u FROM ev WHERE day >= ? AND ev IN ('inst_show','inst_ok') GROUP BY 1,2", d0),
       q("SELECT day, k, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND ev = 'seen' GROUP BY 1,2", d0),
       q("SELECT day, v, COUNT(DISTINCT uid) u FROM ev WHERE day >= ? AND ev = 'stay' GROUP BY 1,2", d0),
+      q("SELECT a.k v, COUNT(DISTINCT a.uid||a.day) lide, COUNT(DISTINCT CASE WHEN e.ev='detail' THEN e.uid||e.day END) det, COUNT(DISTINCT CASE WHEN e.ev='click' THEN e.uid||e.day END) klik, COUNT(DISTINCT CASE WHEN e.ev='inst_show' THEN e.uid||e.day END) vyzva, COUNT(DISTINCT CASE WHEN e.ev='lock_cta' THEN e.uid||e.day END) cta, COUNT(DISTINCT CASE WHEN e.ev='unlock' THEN e.uid||e.day END) odemkli, COUNT(DISTINCT CASE WHEN e.ev='stay' AND e.v>=60 THEN e.uid||e.day END) min1 FROM ev a LEFT JOIN ev e ON e.uid = a.uid AND e.day = a.day AND e.ev IN ('detail','click','inst_show','lock_cta','unlock','stay') WHERE a.ev = 'ab' AND a.day >= ? GROUP BY a.k", d0),
     ]);
   }
   // odběratelé upozornění

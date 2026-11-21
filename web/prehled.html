@@ -44,6 +44,7 @@ tr:last-child td{border-bottom:0}.bar{height:6px;background:var(--or2);border-ra
     <section><h2>Upozornění</h2><table id="subs"></table></section>
     <section><h2>Data na webu</h2><table id="data"></table></section>
   </div>
+  <section><h2>Test: zamčený obsah <small>30 dní, jen mobily v prohlížeči</small></h2><table id="abt"></table><p class="note">A = web jako dřív, B = půlka tuctu a Chytáky zamčené pro lidi bez ikony. Rozhoduje, kde je víc prokliků k partnerům a víc otevření z ikony (dlaždice nahoře).</p></section>
   <section><h2>Co lidé na webu dělají <small id="engR"></small></h2><table id="eng"></table><p class="note">Kolik z lidí, kteří přišli, zůstalo a kam až na stránce dojeli.</p></section>
   <section><h2>Země návštěvníků <small>30 dní</small></h2><table id="ctry"></table></section>
 </main>
@@ -94,6 +95,7 @@ function render(){
   var S=D.subs;$('subs').innerHTML='<tr><td>Celkem zařízení</td><td>'+fmt(S.total)+'</td></tr><tr><td>Ranní poklady + novinky přes den</td><td>'+fmt(S.daily)+'</td></tr><tr><td>Hlídají cenu hotelu</td><td>'+fmt(S.watching)+' lidí · '+fmt(S.watches)+' hotelů</td></tr><tr><td>Nových za 7 dní</td><td>'+fmt(S.new7)+'</td></tr>'+
     Object.keys(S.air).sort(function(x,y){return S.air[y]-S.air[x]}).map(function(k){return '<tr><td>&nbsp;&nbsp;letiště '+esc(k)+'</td><td>'+fmt(S.air[k])+'</td></tr>'}).join('');
   rows('ctry',D.ctry.map(function(x){return [x.c,x.u]}));
+  var AB=D.ab||[];$('abt').innerHTML=AB.length?'<tr><td></td><td class="r">A</td><td class="r">B</td></tr>'+[['Lidé','lide'],['Otevřeli nabídku','det'],['Klikli k partnerovi','klik'],['Zůstali 1 min+','min1'],['Viděli výzvu na plochu','vyzva'],['Klikli na „Přidat na plochu“ u zámku','cta'],['Klikli „ukázat i tak“','odemkli']].map(function(r){var a=AB.filter(function(x){return x.v==='a'})[0]||{},b=AB.filter(function(x){return x.v==='b'})[0]||{};var pa=a.lide?' ('+Math.round((a[r[1]]||0)/a.lide*100)+' %)':'',pb=b.lide?' ('+Math.round((b[r[1]]||0)/b.lide*100)+' %)':'';return '<tr><td>'+r[0]+'</td><td class="r">'+fmt(a[r[1]])+(r[1]!=='lide'?pa:'')+'</td><td class="r">'+fmt(b[r[1]])+(r[1]!=='lide'?pb:'')+'</td></tr>'}).join(''):'<tr><td class="empty">Zatím nic.</td></tr>';
   var SN={dnes:'Dnešní tucet',zima:'Útěk ze zimy',luxus:'Luxus ve slevě',kam:'Kam to bude?',letenky:'Letenkové poklady',chytaky:'Chytáky',nalada:'Podle nálady',vypis:'Celý výpis',ranni:'Ranní poklady (upozornění)'};
   var inR=function(r){return days.indexOf(r.day)>=0};var st=function(v){return (D.stay||[]).filter(function(r){return inR(r)&&r.v===v}).reduce(function(s,r){return s+r.u},0)};
   var sk={};(D.seen||[]).filter(inR).forEach(function(r){sk[r.k]=(sk[r.k]||0)+r.u});

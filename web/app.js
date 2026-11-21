@@ -339,6 +339,7 @@ var PLUS_ICO='<span style="display:inline-grid;place-items:center;width:20px;hei
 function hideInstall(){var el=document.getElementById('isheet');if(el)el.remove();}
 var INST_T={
   auto:['Přidej si Pomeranč na plochu','Každé ráno poklady dne, na ikoně uvidíš, kolik přibylo nových nabídek. Zdarma, bez registrace.'],
+  lock:['Odemkni celý tucet','Přidej si Pomeranč na plochu a otevři ho z ikony. Uvidíš všechno a dáme vědět, když něco výrazně zlevní.'],
   save:['Uloženo ♥ Chceš ho mít po ruce?','Přidej si Pomeranč na plochu. Uložené nabídky najdeš jedním klepnutím a dáme vědět, když něco výrazně zlevní.'],
   detail:['Chceš vědět, až to zlevní?','Přidej si Pomeranč na plochu. Pohlídáme ceny a pošleme ti jen opravdové poklady, žádný spam.'],
   watch:['Hlídání ceny funguje z ikony na ploše','Na iPhonu umí upozornění jen Pomeranč z plochy. Přidej si ho, otevři z ikony a u hotelu klepni znovu na 🔔. Jakmile zlevní, cinkne ti to.'],
@@ -945,6 +946,27 @@ function home(){
   if(!DEMO) window.__cpRefresh=function(){window.__cpRefresh=null;setTimeout(function(){fetch('data/main.json',{cache:'no-cache'}).then(function(r){return r.json()}).then(function(J){if(J.gen!==DATA.gen){if(document.hidden)location.reload();else toast('Je tu nový tucet – obnov stránku');}});},5*60e3);};
   setTimeout(function(){try{localStorage.setItem('cp_last',Date.now())}catch(e){}},5000);
   // odkaz z vánoční reklamy: #darek = malé zájezdy pod stromeček
+  // A/B test: polovina mobilních návštěvníků mimo aplikaci má část obsahu jen pro ty s ikonou
+  (function(){
+    if(IS_APP||!IS_MOBILE||DEMO) return;
+    var ab=lsGet('cp_ab'); if(!ab){ab=Math.random()<.5?'a':'b';lsSet('cp_ab',ab);}
+    cpEv('ab',{k:ab});
+    if(ab!=='b'||lsGet('cp_unlock')===new Date().toDateString()) return;
+    function lock(rows,title,txt,where){
+      if(!rows.length) return;
+      rows.forEach(function(r){r.classList.add('lk');r.setAttribute('aria-hidden','true');r.tabIndex=-1;});
+      var d=document.createElement('div');d.className='lockbox';
+      d.innerHTML='<div class="lk-i">🔒</div><b>'+title+'</b><p>'+txt+'</p><button type="button" class="btn or" data-lk="cta">📲 Přidat Pomeranč na plochu</button><button type="button" class="lk-no" data-lk="no">Teď ne, ukázat i tak</button>';
+      rows[0].parentNode.insertBefore(d,rows[0]);
+      d.addEventListener('click',function(e){var b=e.target.closest('[data-lk]');if(!b)return;e.stopPropagation();
+        if(b.getAttribute('data-lk')==='cta'){cpEv('lock_cta',{k:where});showInstall('lock');}
+        else{cpEv('unlock',{k:where});lsSet('cp_unlock',new Date().toDateString());document.querySelectorAll('.lk').forEach(function(x){x.classList.remove('lk');x.removeAttribute('aria-hidden');x.tabIndex=0;});document.querySelectorAll('.lockbox').forEach(function(x){x.remove();});}});
+    }
+    var tr=[].slice.call(document.querySelectorAll('#dnes .tl .tr')).slice(5);
+    lock(tr,'Zbylých '+tr.length+' pokladů z dnešního tuctu','Vidí je jen ti, kdo mají Pomeranč na ploše. Zdarma, bez registrace, a k tomu upozornění, když něco výrazně zlevní.','tucet');
+    var cy=[].slice.call(document.querySelectorAll('#chytaky .cy'));
+    lock(cy,'Chytáky jsou jen pro Pomeranč na ploše','Nelogičnosti v cenících, které jinde nenajdeš. Přidej si Pomeranč na plochu a odemkneš je.','chytaky');
+  })();
   // měření zapojení: jak daleko lidé dojdou a jak dlouho zůstanou
   if('IntersectionObserver' in window){var SEEN={};var io=new IntersectionObserver(function(es){es.forEach(function(en){var id=en.target.id;if(en.isIntersecting&&!SEEN[id]){SEEN[id]=1;cpEv('seen',{k:id});io.unobserve(en.target);}});},{threshold:0.25});
     ['dnes','zima','luxus','kam','letenky','chytaky','nalada','vypis','ranni'].forEach(function(id){var el=document.getElementById(id);if(el)io.observe(el);});
