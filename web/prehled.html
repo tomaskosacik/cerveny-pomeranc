@@ -69,7 +69,7 @@ function render(){
   if(!D)return;var days=range(),lbl=R===1?'dnes':R===7?'za 7 dní':'za 30 dní';
   var appU=D.appDays.filter(function(r){return days.indexOf(r.day)>=0}).reduce(function(s,r){return s+r.u},0);
   var ppl=sum('view','u'),clicks=sum('click','n'),val=sum('click','v');
-  var t=[['Lidé na webu',ppl,lbl],['Z ikony na ploše',appU,'otevření z plochy'],['Otevřené nabídky',sum('detail','n'),'detailů'],['Prokliky k partnerům',clicks,'hodnota '+kc(val),'or'],['Zapnutá upozornění',D.subs.total,'+'+D.subs.new7+' za 7 dní','or'],['Hledání',sum('search','n'),'v „Kam to bude?“']];
+  var t=[['Lidé na webu',ppl,lbl],['Z ikony na ploše',appU,'otevření z plochy'],['Otevřené nabídky',sum('detail','n'),'detailů'],['Prokliky k partnerům',clicks,'kliknuté nabídky za '+kc(val),'or'],['Zapnutá upozornění',D.subs.total,'+'+D.subs.new7+' za 7 dní','or'],['Hledání',sum('search','n'),'v „Kam to bude?“']];
   $('tiles').innerHTML=t.map(function(x){return '<div class="t '+(x[3]||'')+'"><small>'+x[0]+'</small><b>'+fmt(x[1])+'</b><span>'+esc(x[2])+'</span></div>'}).join('');
   // graf
   var all=[];for(var i=29;i>=0;i--)all.push(today(i));
@@ -87,7 +87,7 @@ function render(){
   var fm=[['Přišli na web',ppl],['Otevřeli nabídku',det],['Klikli k partnerovi',cu]],f0=Math.max(ppl,1);
   $('fun').innerHTML=fm.map(function(x){return '<div><span>'+x[0]+'</span><div class="bar"><i style="width:'+Math.min(100,Math.round(x[1]/f0*100))+'%"></i></div><em>'+fmt(x[1])+'</em></div>'}).join('')+(ppl?'<div><span>Proklik z návštěv</span><em style="width:auto">'+(cu/ppl*100).toFixed(1).replace('.',',')+' %</em></div>':'');
   rows('src',D.src.map(function(x){return [x.src,x.u]}));
-  rows('part',D.clicksBy.map(function(x){return [x.k,x.n,x.v]}),function(x){return fmt(x[1])+' × · '+kc(x[2])});
+  rows('part',D.clicksBy.map(function(x){return [x.k,x.n,x.v]}),function(x){return fmt(x[1])+' × · nabídky za '+kc(x[2])});
   rows('dest',D.topDest.map(function(x){return [x.x,x.n]}));
   var im={};D.inst.forEach(function(x){im[x.k]=im[x.k]||{s:0,o:0};im[x.k][x.ev==='inst_ok'?'o':'s']+=x.u});
   var MN={prompt:'Android (tlačítko)',ios:'iPhone Safari (návod)',android:'Android (návod)','inapp-ios':'iPhone v FB/IG','inapp-android':'Android v FB/IG',appinstalled:'Android potvrdil instalaci'};
