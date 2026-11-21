@@ -1,0 +1,73 @@
+dovolena/albanie: hotely 15, nové termíny 277
+dovolena/bulharsko: hotely 134, nové termíny 2341
+dovolena/cerna-hora: hotely 4, nové termíny 48
+dovolena/chorvatsko: hotely 0, nové termíny 0
+dovolena/dominikanska-republika: hotely 109, nové termíny 1126
+dovolena/egypt: hotely 77, nové termíny 766
+dovolena/eurovikendy: hotely 130, nové termíny 3255
+dovolena/indonesie: hotely 28, nové termíny 609
+dovolena/italie: hotely 139, nové termíny 1968
+dovolena/kapverdy: hotely 32, nové termíny 533
+dovolena/kuba: hotely 113, nové termíny 1090
+dovolena/kypr: hotely 116, nové termíny 2400
+dovolena/maledivy: hotely 72, nové termíny 1118
+dovolena/malta: hotely 0, nové termíny 0
+dovolena/maroko: hotely 0, nové termíny 0
+dovolena/mauricius: hotely 79, nové termíny 1681
+dovolena/mexiko: hotely 92, nové termíny 1005
+dovolena/oman: hotely 35, nové termíny 615
+dovolena/portugalsko: hotely 33, nové termíny 612
+dovolena/recko: hotely 178, nové termíny 2691
+dovolena/sae: hotely 140, nové termíny 2288
+dovolena/seychely: hotely 44, nové termíny 871
+dovolena/spanelsko: hotely 35, nové termíny 562
+dovolena/sri-lanka: hotely 48, nové termíny 446
+dovolena/thajsko: hotely 166, nové termíny 1979
+dovolena/tunisko: hotely 129, nové termíny 2046
+dovolena/turecko: hotely 70, nové termíny 1229
+dovolena/vse-pobytove: hotely 192, nové termíny 540
+dovolena/zanzibar: hotely 45, nové termíny 749
+invia/bomby: nabídky 150, nové 150
+invia/bulharsko: nabídky 150, nové 150
+invia/dominikanska-republika: nabídky 150, nové 150
+invia/egypt: nabídky 150, nové 149
+invia/italie: nabídky 150, nové 147
+invia/kanary: nabídky 150, nové 149
+invia/kapverdy: nabídky 150, nové 150
+invia/kypr: nabídky 150, nové 149
+invia/maledivy: nabídky 150, nové 150
+invia/mauricius: nabídky 150, nové 148
+invia/mexiko: nabídky 150, nové 150
+invia/nejprodavanejsi: nabídky 150, nové 38
+invia/recko: nabídky 150, nové 150
+invia/sae: nabídky 150, nové 149
+invia/spanelsko: nabídky 150, nové 110
+invia/thajsko: nabídky 150, nové 147
+invia/tunisko: nabídky 150, nové 150
+invia/turecko: nabídky 150, nové 150
+invia/zanzibar: nabídky 150, nové 150
+Web: 3199 hotelů, 11057 termínů ve výpisu, 43 souborů detailu
+
+Letenky: {"rows":1178}
+kiwi odkazy: https://tp.media/r?campaign_id=111&marker=808265&p=4136&trs=603430&u=
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky PRG: 1000 cen, 105 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky VIE: 1000 cen, 111 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky KTW: 409 cen, 94 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky BUD: 1000 cen, 91 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky BTS: 1000 cen, 115 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky BRQ: 26 cen, 16 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky OSR: 13 cen, 7 destinací
+letenky PRG business: 44 cen, 24 destinací
+letenky VIE business: 103 cen, 47 destinací
+letenky BUD business: 33 cen, 22 destinací
+
+CELKEM hotely 3199 (Dovolená 2072, Invia 1524, u obou 397)
+Budoucí termíny 35530 (Dovolená 32845, Invia 2685)
+Země: Itálie 312, Řecko 281, Thajsko 265, Spojené arabské emiráty 204, Turecko 182, Bulharsko 169, Tunisko 162, Kypr 155, Egypt 141, Kanárské ostrovy 141, Maledivy 139, Dominikánská republika 132, Mexiko 122, Španělsko 115, Kuba 113, Mauricius 113, Zanzibar 69, Srí Lanka 51, Seychely 44, Portugalsko 42, Omán 35, Kapverdské ostrovy 34, Indonésie 28, Rakousko 22, Francie 18, Velká Británie 16, Albánie 15, Slovensko 15, Česká republika 13, Švédsko 7, Holandsko 7, Chorvatsko 7, Polsko 5, Irsko 5, Černá Hora 4, Norsko 3, Monako 3, Svět 3, Malta 2, Slovinsko 2, Lotyšsko 1, Maďarsko 1, Katar 1
