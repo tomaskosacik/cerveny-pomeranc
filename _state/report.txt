@@ -1,0 +1,74 @@
+dovolena/albanie: hotely 9, nové termíny 122
+dovolena/bulharsko: hotely 90, nové termíny 1591
+dovolena/cerna-hora: hotely 1, nové termíny 4
+dovolena/chorvatsko: hotely 0, nové termíny 0
+dovolena/dominikanska-republika: hotely 88, nové termíny 556
+dovolena/egypt: hotely 108, nové termíny 1096
+dovolena/eurovikendy: hotely 132, nové termíny 3291
+dovolena/indonesie: hotely 30, nové termíny 692
+dovolena/italie: hotely 94, nové termíny 1261
+dovolena/kapverdy: hotely 27, nové termíny 322
+dovolena/kuba: hotely 113, nové termíny 1077
+dovolena/kypr: hotely 79, nové termíny 1987
+dovolena/maledivy: hotely 45, nové termíny 524
+dovolena/malta: hotely 0, nové termíny 0
+dovolena/maroko: hotely 0, nové termíny 0
+dovolena/mauricius: hotely 31, nové termíny 666
+dovolena/mexiko: hotely 79, nové termíny 753
+dovolena/oman: hotely 10, nové termíny 161
+dovolena/portugalsko: hotely 6, nové termíny 24
+dovolena/recko: hotely 232, nové termíny 3015
+dovolena/sae: hotely 134, nové termíny 1726
+dovolena/seychely: hotely 19, nové termíny 245
+dovolena/spanelsko: hotely 56, nové termíny 746
+dovolena/sri-lanka: hotely 51, nové termíny 482
+dovolena/thajsko: hotely 148, nové termíny 1791
+dovolena/tunisko: hotely 71, nové termíny 970
+dovolena/turecko: hotely 79, nové termíny 1239
+dovolena/vse-pobytove: hotely 374, nové termíny 542
+dovolena/zanzibar: hotely 9, nové termíny 126
+invia/bomby: nabídky 150, nové 149
+invia/bulharsko: nabídky 150, nové 150
+invia/dominikanska-republika: nabídky 150, nové 150
+invia/egypt: nabídky 150, nové 148
+invia/italie: nabídky 150, nové 148
+invia/kanary: nabídky 150, nové 145
+invia/kapverdy: nabídky 150, nové 150
+invia/kypr: nabídky 150, nové 148
+invia/maledivy: nabídky 150, nové 149
+invia/mauricius: nabídky 150, nové 149
+invia/mexiko: nabídky 150, nové 150
+invia/nejprodavanejsi: nabídky 150, nové 54
+invia/recko: nabídky 150, nové 149
+invia/sae: nabídky 150, nové 146
+invia/spanelsko: nabídky 150, nové 108
+invia/thajsko: nabídky 150, nové 150
+invia/tunisko: nabídky 150, nové 150
+invia/turecko: nabídky 150, nové 146
+invia/zanzibar: nabídky 150, nové 150
+Web: 2956 hotelů, 9234 termínů ve výpisu, 50 souborů detailu
+
+Letenky: {"rows":1123}
+kiwi odkazy: https://tp.media/r?campaign_id=111&marker=808265&p=4136&trs=603430&u=
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky PRG: 1000 cen, 98 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky VIE: 1000 cen, 106 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky KTW: 447 cen, 97 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky BUD: 1000 cen, 95 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky BTS: 958 cen, 121 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky BRQ: 23 cen, 9 destinací
+pole: depart_date,origin,destination,gate,return_date,found_at,trip_class,value,number_of_changes,duration,distance,show_to_affiliates,actual
+letenky OSR: 12 cen, 9 destinací
+letenky PRG business: 26 cen, 15 destinací
+letenky VIE business: 48 cen, 27 destinací
+letenky BUD business: 25 cen, 20 destinací
+
+CELKEM hotely 2956 (Dovolená 1761, Invia 1547, u obou 352)
+Budoucí termíny 27697 (Dovolená 25009, Invia 2688)
+Země: Řecko 347, Itálie 271, Thajsko 248, Spojené arabské emiráty 211, Turecko 195, Egypt 176, Kanárské ostrovy 159, Bulharsko 148, Španělsko 128, Kuba 113, Dominikánská republika 110, Mexiko 107, Kypr 106, Maledivy 105, Tunisko 105, Mauricius 71, Srí Lanka 51, Zanzibar 48, Indonésie 30, Kapverdské ostrovy 29, Slovensko 21, Seychely 19, Francie 18, Velká Británie 16, Portugalsko 15, Česká republika 14, Rakousko 13, Omán 10, Albánie 9, Švédsko 7, Holandsko 7, Keňa 6, Chorvatsko 6, Irsko 5, Polsko 4, Monako 4, Kambodža 4, Norsko 3, Bali 3, Vietnam 2, Slovinsko 2, Maroko 2, Černá Hora 1, Lotyšsko 1, Panama 1, Malta 1, Svět 1, Maďarsko 1, Madeira 1, Katar 1
+Nenamapované (airport): Debrecín
